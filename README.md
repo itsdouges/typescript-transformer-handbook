@@ -13,3 +13,5 @@ This handbook is by no means an exhaustive list of how to best write and consume
 If see any parts that can be improved or updated,
 or new information that can be added,
 please submit a PR so we can all benefit 😊!
+
+> Reach out to me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse.

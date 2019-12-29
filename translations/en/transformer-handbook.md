@@ -45,6 +45,8 @@ Typescript is a typed superset of Javascript that compiles to plain Javascript.
 Typescript supports the ability for consumers to _transform_ code from one form to another,
 similarly to how [Babel](https://babeljs.io/) has _plugins_.
 
+> Reach out to me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse.
+
 ## The basics
 
 Transformers are essentially a function that looks like this:
