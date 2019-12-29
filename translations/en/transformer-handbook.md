@@ -662,9 +662,114 @@ typescript === transformers;
 
 ## Types of transformers
 
-### Transformer options
+All transformers end up returning the `TransformerFactory` type signature.
+These types of transformers are taken verbatim from [`ttypescript`](https://github.com/cevek/ttypescript).
 
-### Consuming transformers
+### Transformer step
+
+Transformers can run in two distinct steps,
+**before** compilation,
+and **after** compilation.
+However they will always run _after_ type checking,
+by design.
+
+### Factory
+
+Also known as `raw`,
+this is the same as the one used in writing your first transformer.
+
+```ts
+(context: ts.TransformationContext) => (sourceFile: ts.SourceFile) => ts.SourceFile;
+```
+
+### Config
+
+When your transformer wants config that can be controlled by consumers.
+
+```ts
+(config?: YourPluginConfigInterface) => ts.TransformerFactory;
+```
+
+### Program
+
+When needing access to the `program` object this is the signature you should use,
+it should return a `TransformerFactory`.
+It also has configuration available as the second object,
+supplied by consumers.
+
+```ts
+(program: ts.Program, config?: YourPluginConfigInterface) => ts.TransformerFactory;
+```
+
+## Consuming transformers
+
+Amusingly Typescript has no official support for consuming transformers via `tsconfig.json`.
+There is a [GitHub issue](https://github.com/microsoft/TypeScript/issues/14419) dedicated to talking about introducing something for it.
+Regardless you can consume transformers it's just a little round-about.
+
+### [`ttypescript`](https://github.com/cevek/ttypescript)
+
+> This is the recommended approach!
+> Hopefully in the future this can be officially supported in `typescript`.
+
+Essentially a wrapper over the top of the `tsc` CLI -
+this gives first class support to transformers vis the `tsconfig.json`.
+It has `typescript` listed as a peer dependency so the theory is it isn't too brittle.
+
+Install:
+
+```sh
+npm i ttypescript typescript -D
+```
+
+Add your transformer into the compiler options:
+
+```json
+{
+  "compilerOptions": {
+    "plugins": [{ "transform": "my-transformer" }]
+  }
+}
+```
+
+Run `ttsc`:
+
+```sh
+ttsc
+```
+
+`ttypescript` supports `tsc` CLI,
+Webpack,
+Parcel,
+Rollup,
+Jest,
+& VSCode.
+
+### `webpack`
+
+Using either [`awesome-typescript-loader`](https://github.com/s-panferov/awesome-typescript-loader#getcustomtransformers-string--program-tsprogram--tscustomtransformers--undefined-defaultundefined) or [`ts-loader`](https://github.com/TypeStrong/ts-loader#getcustomtransformers) you can either use the `getCustomTransformers()` option (they have the same signature) or you can use `ttypescript`:
+
+```js
+{
+  test: /\.(ts|tsx)$/,
+  loader: require.resolve('awesome-typescript-loader'),
+  // or
+  loader: require.resolve('ts-loader'),
+  options: {
+      compiler: 'ttypescript'
+      // or
+      getCustomTransformers: program => {
+        before: [yourBeforeTransformer(program, { customConfig: true })],
+        after: [yourAfterTransformer(program, { customConfig: true })],
+      }
+  }
+}
+```
+
+### `parcel`
+
+Use `ttypescript` with the `parcel-plugin-ttypescript` plugin.
+See: https://github.com/cevek/ttypescript#parcel
 
 ## Transformation operations
 
