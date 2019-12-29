@@ -78,7 +78,7 @@ Using such a tool we can see that the following code:
 
 ```js
 function hello() {
-  console.log("world");
+  console.log('world');
 }
 ```
 
@@ -227,18 +227,18 @@ so use it wisely.
 Ideally for the 90% case you'll want to use the built in methods to traverse the AST.
 Typescript gives us two primary methods for doing this:
 
-#### visitNode()
+#### `visitNode()`
 
 Generally you'll only pass this the initial `SourceFile`.
 We'll go into what the `visitor` function is soon.
 
 ```ts
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
 ts.visitNode(sourceFile, visitor);
 ```
 
-#### visitEachChild()
+#### `visitEachChild()`
 
 This is a special function that uses `visitNode` under the hood.
 It will handle traversing down to the inner most node -
@@ -246,7 +246,7 @@ and it knows how to do it without you having the think about it.
 We'll go into what the `context` object is soon.
 
 ```ts
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
 ts.visitEachChild(node, visitor, context);
 ```
@@ -257,7 +257,7 @@ The `visitor` function is something you'll be using in every Transformer you wri
 The simplest function we could write might look something like this:
 
 ```ts
-import * as ts from "typescript";
+import * as ts from 'typescript';
 
 const visitor = (node: ts.Node): ts.Node => {
   console.log(node.kind);
@@ -300,9 +300,240 @@ We'll see our first look at a simple Typescript transformer soon.
 
 ### Scopes
 
+> Most of this content is taken directly from the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md#scopes) as the same principles apply.
+
+Next let's introduce the concept of a [scope](<https://en.wikipedia.org/wiki/Scope_(computer_science)>).
+JavaScript has lexical scoping,
+which is a tree structure where blocks create new scope.
+This is the same principle as [closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures).
+
+```js
+// global scope
+
+function scopeOne() {
+  // scope 1
+
+  function scopeTwo() {
+    // scope 2
+  }
+}
+```
+
+Whenever you create a reference in JavaScript,
+whether that be by a variable,
+function,
+class,
+param,
+import,
+label,
+etc.,
+it belongs to the current scope.
+
+```js
+var global = 'I am in the global scope';
+
+function scopeOne() {
+  var one = 'I am in the scope created by `scopeOne()`';
+
+  function scopeTwo() {
+    var two = 'I am in the scope created by `scopeTwo()`';
+  }
+}
+```
+
+Code within a deeper scope may use a reference from a higher scope.
+
+```js
+function scopeOne() {
+  var one = 'I am in the scope created by `scopeOne()`';
+
+  function scopeTwo() {
+    one = 'I am updating the reference in `scopeOne` inside `scopeTwo`';
+  }
+}
+```
+
+A lower scope might also create a reference of the same name without modifying it.
+
+```js
+function scopeOne() {
+  var one = 'I am in the scope created by `scopeOne()`';
+
+  function scopeTwo() {
+    var one = 'I am creating a new `one` but leaving reference in `scopeOne()` alone.';
+  }
+}
+```
+
+When writing a transform,
+we want to be wary of scope.
+We need to make sure we don't break existing code while modifying different parts of it.
+
+We may want to add new references and make sure they don't collide with existing ones.
+Or maybe we just want to find where a variable is referenced.
+We want to be able to track these references within a given scope.
+
+> **TODO** - See how we can refer to a scope in a transformer.
+
+#### Bindings
+
+References all belong to a particular scope;
+this relationship is known as a binding.
+
+```js
+function scopeOnce() {
+  var ref = 'This is a binding';
+
+  ref; // This is a reference to a binding
+
+  function scopeTwo() {
+    ref; // This is a reference to a binding from a lower scope
+  }
+}
+```
+
+> **TODO** - See how we can refer to bindings in a transformer.
+
 ## API
 
+When writing your transformer you'll most likely be writing it using Typescript.
+You'll want to using the [`typescript`](https://www.npmjs.com/package/typescript) package to do most of the heavy lifting.
+It is used for everything,
+unlike Babel which has separate small packages.
+
+First,
+let's install it.
+
+```sh
+npm i typescript --save
+```
+
+And then let's bring it into scope (assuming we're in a `.ts` file for our transformer):
+
+```ts
+import * as ts from 'typescript';
+```
+
+> **Tip** - I _strongly recommend_ using intellisense in VSCode to interrogate the API,
+> it's super useful!
+
+### Visiting
+
+These methods are useful for visiting nodes -
+we've briefly gone over a few of them above.
+
+- `ts.visitNode(node, visitor)` - useful for visiting the root node, generally the `SourceFile`
+- `ts.visitEachChild(node, visitor, context)` - useful for visiting each child of a node
+- `ts.isXyz(node)` - useful for narrowing the type of a `node`, an example of this is `ts.isVariableDeclaration(node)`
+
+### Nodes
+
+These methods are useful for modifying a `node` in some form.
+
+- `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
+- `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
+- `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
+
+### `context`
+
+Covered above,
+this is supplied to every transformer and has some handy methods available to modify the current context (this is not an exhaustive list,
+just the stuff we care about):
+
+- `getCompilerOptions()` - Gets the compiler options supplied to the transformer
+- `hoistFunctionDeclaration(node)` - Hoists a function declaration to the containing scope
+- `hoistVariableDeclaration(node)` - Hoists a variable declaration to the containing scope
+
+### `program`
+
+This is a special property that is available via a `TransformerFactory`.
+We will cover this kind of transformer in [Types of transformers](#types-of-transformers).
+It contains metadata about the _entire program_,
+such as (this is not an exhaustive list,
+just the stuff we care about):
+
+- `getRootFileNames()` - get an array of file names in the project
+- `getSourceFiles()` - gets all `SourceFile`s in the project
+- `getCompilerOptions()` - compiler options from the `tsconfig.json`, command line, or other (can also get it from `context`)
+- `getSourceFile(fileName: string)` - gets a `SourceFile` using its `fileName`
+- `getSourceFileByPath(path: Path)` - gets a `SourceFile` using its `path`
+- `getCurrentDirectory()` - gets the current directory string
+- `getTypeChecker()` - gets ahold of the type checker, useful when doing things with [Symbols](https://basarat.gitbooks.io/typescript/content/docs/compiler/binder.html)
+
 ## Writing your first transformer
+
+It's the part we've all be waiting for!
+Let's write out first transformer.
+
+First let's import `typescript`.
+
+```ts
+import * as ts from 'typescript';
+```
+
+It's going to contain everything that we could use when writing a transformer.
+
+Next let's create a default export that is going to be our transformer,
+our initial transformer we be a transformer factory (because this gives us access to `context`) -
+we'll go into the other kinds of transformers later.
+
+```ts
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    // transformation code here
+  };
+};
+
+export default transformer;
+```
+
+Because we're using Typescript to write out transformer -
+we get all the type safety and more importantly intellisense!
+If you're up to here you'll notice Typescript complaining that we aren't returning a `SourceFile` -
+let's fix that.
+
+```diff
+import * as ts from "typescript";
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    // transformation code here
++    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+Sweet we fixed the type error!
+
+For our first transformer we'll take a hint from the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md#writing-your-first-babel-plugin) and rename some identifiers.
+
+Let's write a visitor function,
+remember that a visitor function should take a `node`,
+and then return a `node`.
+
+```diff
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
++    const visitor = (node: ts.Node): ts.Node => {
++      return node;
++    };
++
++    ts.visitNode(sourceFile, visitor);
+
+    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+Okay that will visit the
 
 ## Types of transformers
 
@@ -356,6 +587,54 @@ We'll see our first look at a simple Typescript transformer soon.
 
 ## Building nodes
 
-## Unit testing
+## Testing
+
+Generally with transformers the the usefulness of unit level tests is quite limited.
+I recommend writing integration tests (even under the guise of unit tests) to stretch your tests to be super useful and resilient.
+This boils down to:
+
+- Write integration tests
+- Avoid snapshot tests - only do it if it makes sense - the larger the snapshot the less useful it is
+- Try to pick apart specific behavior for every test you write - and only assert one thing per test
+
+If you want you can use the [Typescript compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function) to setup your transformer for testing,
+but I'd recommend using a library instead.
+
+### [`ts-transformer-testing-library`](https://github.com/marionebl/ts-transformer-testing-library)
+
+This library makes testing transformers easier.
+It is made to be used in conjunction with a test runner such as [`jest`](https://github.com/facebook/jest).
+It simplifies the setup of your transformer,
+but still allows you to write your tests as you would for any other piece of software.
+
+Here's an example test using it:
+
+```ts
+import { Transformer } from 'ts-transformer-testing-library';
+import transformerFactory from '../index';
+import pkg from '../../../../package.json';
+
+const transformer = new Transformer()
+  .addTransformer(transformerFactory)
+  .addMock({ name: pkg.name, content: `export const jsx: any = () => null` })
+  .addMock({
+    name: 'react',
+    content: `export default {} as any; export const useState = {} as any;`,
+  })
+  .setFilePath('/index.tsx');
+
+it('should add react default import if it only has named imports', () => {
+  const actual = transformer.transform(`
+    /** @jsx jsx */
+    import { useState } from 'react';
+    import { jsx } from '${pkg.name}';
+
+    <div css={{}}>hello world</div>
+  `);
+
+  // We are also using `jest-extended` here to add extra matchers to the jest object.
+  expect(actual).toIncludeRepeated('import React, { useState } from "react"', 1);
+});
+```
 
 ## Gotchas
