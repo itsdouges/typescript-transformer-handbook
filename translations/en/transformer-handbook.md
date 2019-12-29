@@ -2,7 +2,7 @@
 
 This document covers how to write a [Typescript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
-## Table of contents
+<!-- toc -->
 
 - [Introduction](#introduction)
 - [The basics](#the-basics)
@@ -38,6 +38,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Find a specific parent](#find-a-specific-parent)
     - [Stopping traversal](#stopping-traversal)
   - [Manipulation](#manipulation)
+    - [Updating a node](#updating-a-node)
     - [Replacing a node](#replacing-a-node)
     - [Replacing a node with multiple nodes](#replacing-a-node-with-multiple-nodes)
     - [Inserting a sibling node](#inserting-a-sibling-node)
@@ -53,9 +54,10 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
     - [Determining the jsx pragma](#determining-the-jsx-pragma)
-- [Building nodes](#building-nodes)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
+
+<!-- tocstop -->
 
 ## Introduction
 
@@ -823,7 +825,7 @@ const visitor = (node: ts.Node): ts.Node => {
 
 ### Manipulation
 
-#### Replacing a node
+#### Updating a node
 
 There are two ways we generally can update a node.
 One is by creating a mutable clone,
@@ -853,6 +855,8 @@ const visitor = (node: ts.Node): ts.Node => {
   }
 };
 ```
+
+#### Replacing a node
 
 #### Replacing a node with multiple nodes
 
@@ -896,8 +900,6 @@ const visitor = (node: ts.Node): ts.Node => {
 #### Following module imports
 
 #### Determining the jsx pragma
-
-## Building nodes
 
 ## Testing
 

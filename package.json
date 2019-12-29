@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "generate-toc": "npx markdown-toc -i ./translations/en/transformer-handbook.md "
+  }
+}
