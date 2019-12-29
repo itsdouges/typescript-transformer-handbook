@@ -6,25 +6,31 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 
 - [Introduction](#introduction)
 - [The basics](#the-basics)
-  - [What are abstract syntax trees (ASTs)](#what-are-abstract-syntax-trees--asts-)
+  - [What are abstract syntax trees (ASTs)](#what-are-abstract-syntax-trees-asts)
   - [Stages of Typescript](#stages-of-typescript)
     - [A Program according to Typescript](#a-program-according-to-typescript)
   - [Traversal](#traversal)
-    - [`visitNode()`](#visitnode---)
-    - [`visitEachChild()`](#visiteachchild---)
-    - [`visitor`](#visitor-)
-    - [`context`](#context-)
+    - [`visitNode()`](#visitnode)
+    - [`visitEachChild()`](#visiteachchild)
+    - [`visitor`](#visitor)
+    - [`context`](#context)
   - [Scopes](#scopes)
     - [Bindings](#bindings)
 - [API](#api)
   - [Visiting](#visiting)
   - [Nodes](#nodes)
-  - [`context`](#context--1)
-  - [`program`](#program-)
+  - [`context`](#context-1)
+  - [`program`](#program)
 - [Writing your first transformer](#writing-your-first-transformer)
 - [Types of transformers](#types-of-transformers)
-  - [Transformer options](#transformer-options)
-  - [Consuming transformers](#consuming-transformers)
+  - [Transformer step](#transformer-step)
+  - [Factory](#factory)
+  - [Config](#config)
+  - [Program](#program)
+- [Consuming transformers](#consuming-transformers)
+  - [`ttypescript`](#ttypescript)
+  - [`webpack`](#webpack)
+  - [`parcel`](#parcel)
 - [Transformation operations](#transformation-operations)
   - [Visiting](#visiting-1)
     - [Checking a node is a certain type](#checking-a-node-is-a-certain-type)
@@ -35,7 +41,6 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Replacing a node](#replacing-a-node)
     - [Replacing a node with multiple nodes](#replacing-a-node-with-multiple-nodes)
     - [Inserting a sibling node](#inserting-a-sibling-node)
-    - [Inserting into a container](#inserting-into-a-container)
     - [Removing a node](#removing-a-node)
     - [Adding new import declarations](#adding-new-import-declarations)
     - [Hoisting nodes](#hoisting-nodes)
@@ -47,10 +52,10 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Advanced](#advanced)
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
+    - [Determining the jsx pragma](#determining-the-jsx-pragma)
 - [Building nodes](#building-nodes)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
-- [Gotchas](#gotchas)
 
 ## Introduction
 
@@ -777,23 +782,98 @@ See: https://github.com/cevek/ttypescript#parcel
 
 #### Checking a node is a certain type
 
+There is a wide variety of helper methods that can assert what type a node is.
+When they return true they will _narrow_ the type of the `node`,
+potentially giving you extra properties & methods based on the type.
+
+> **Tip** - Abuse intellisense to interrogate the `ts` import for methods you can use,
+> as well as [Typescript AST Viewer](https://ts-ast-viewer.com/) to know what type a node is.
+
+```ts
+import * as ts from 'typescript';
+
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isJsxAttribute(node.parent)) {
+    // ...
+  }
+};
+```
+
 #### Check if an identifier is referenced
+
+> **TODO** - Is this possible?
 
 #### Find a specific parent
 
+> **TODO** - Is this possible?
+
 #### Stopping traversal
+
+In the visitor function you can return early instead of continuing down children,
+so for example if we hit a node and we know we don't need to go any further:
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isArrowFunction(node)) {
+    // return early
+    return node;
+  }
+};
+```
 
 ### Manipulation
 
 #### Replacing a node
 
+There are two ways we generally can update a node.
+One is by creating a mutable clone,
+the other is by calling `updateXyz` methods.
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isIdentifier(node)) {
+    // Will rename all identifiers to NewName
+    const mutableClone = ts.getMutableClone(node);
+    mutableClone.escapedText = 'NewName';
+    return mutableClone;
+  }
+};
+```
+
+You'll notice that you can't mutate unless you `getMutableClone` -
+this is by design.
+
+Alternatively we can `update` the node via the helper methods:
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isJsxAttribute(node)) {
+    // Will update all react jsx attributes to foo="bar"
+    return ts.updateJsxAttribute(node, ts.createIdentifier('foo'), ts.createStringLiteral('bar'));
+  }
+};
+```
+
 #### Replacing a node with multiple nodes
 
 #### Inserting a sibling node
 
-#### Inserting into a container
+> **TODO** - Is this possible?
 
 #### Removing a node
+
+One constraint of a transformer is you must _always_ return a node.
+But what if you don't want a specific node anymore?
+Return an empty statement!
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isImportDeclaration(node)) {
+    // Will remove all import declarations
+    return ts.createEmptyStatement();
+  }
+};
+```
 
 #### Adding new import declarations
 
@@ -814,6 +894,8 @@ See: https://github.com/cevek/ttypescript#parcel
 #### Evaluating expressions
 
 #### Following module imports
+
+#### Determining the jsx pragma
 
 ## Building nodes
 
@@ -866,5 +948,3 @@ it('should add react default import if it only has named imports', () => {
   expect(actual).toIncludeRepeated('import React, { useState } from "react"', 1);
 });
 ```
-
-## Gotchas
