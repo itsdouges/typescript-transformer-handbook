@@ -517,6 +517,12 @@ Sweet we fixed the type error!
 
 For our first transformer we'll take a hint from the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md#writing-your-first-babel-plugin) and rename some identifiers.
 
+Here's our source code:
+
+```ts
+babel === plugins;
+```
+
 Let's write a visitor function,
 remember that a visitor function should take a `node`,
 and then return a `node`.
@@ -539,7 +545,120 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 export default transformer;
 ```
 
-Okay that will visit the
+Okay that will visit the `SourceFile`...
+and then just immediately return it.
+That's a bit useless -
+let's make sure we visit every node!
+
+```diff
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    const visitor = (node: ts.Node): ts.Node => {
+-      return node;
++      return ts.visitEachChild(node, visitor, context);
+    };
+
+    ts.visitNode(sourceFile, visitor);
+
+    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+Now let's find identifiers so we can rename them:
+
+```diff
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    const visitor = (node: ts.Node): ts.Node => {
++      if (ts.isIdentifier(node)) {
++        // transform here
++      }
+
+      return ts.visitEachChild(node, visitor, context);
+    };
+
+    ts.visitNode(sourceFile, visitor);
+
+    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+And then let's target the specific identifiers we're interested in:
+
+```diff
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    const visitor = (node: ts.Node): ts.Node => {
+      if (ts.isIdentifier(node)) {
++        switch (node.escapedText) {
++          case 'babel':
++            // rename babel
++
++          case 'plugin':
++            // rename plugin
++        }
+      }
+
+      return ts.visitEachChild(node, visitor, context);
+    };
+
+    ts.visitNode(sourceFile, visitor);
+
+    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+And then let's return new nodes that have been renamed!
+
+```diff
+import * as ts from 'typescript';
+
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    const visitor = (node: ts.Node): ts.Node => {
+      if (ts.isIdentifier(node)) {
+        switch (node.escapedText) {
+          case 'babel':
++            return ts.createIdentifier('typescript');
+
+          case 'plugin':
++            return ts.createIdentifier('transformer');
+        }
+      }
+
+      return ts.visitEachChild(node, visitor, context);
+    };
+
+    ts.visitNode(sourceFile, visitor);
+
+    return sourceFile;
+  };
+};
+
+export default transformer;
+```
+
+Sweet!
+We run this over our source code and we get this output:
+
+```ts
+typescript === transformers;
+```
 
 ## Types of transformers
 
