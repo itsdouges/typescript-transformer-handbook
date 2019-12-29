@@ -858,7 +858,37 @@ const visitor = (node: ts.Node): ts.Node => {
 
 #### Replacing a node
 
+Maybe instead of updating a node we want to completely change it.
+We can do that by just returning... a completely new node!
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isFunctionDeclaration(node)) {
+    // Will replace any function it finds with an arrow function.
+    return ts.createVariableDeclarationList(
+      [
+        ts.createVariableDeclaration(
+          ts.createIdentifier(node.name.escapedText),
+          undefined,
+          ts.createArrowFunction(
+            undefined,
+            undefined,
+            [],
+            undefined,
+            ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+            ts.createBlock([], false)
+          )
+        ),
+      ],
+      ts.NodeFlags.Const
+    );
+  }
+};
+```
+
 #### Replacing a node with multiple nodes
+
+> **TODO** - Is this possible?
 
 #### Inserting a sibling node
 
@@ -881,9 +911,53 @@ const visitor = (node: ts.Node): ts.Node => {
 
 #### Adding new import declarations
 
-#### Hoisting nodes
+Sometimes your transformation will need some runtime part,
+for that you can add your own import declaration.
+
+```ts
+ts.updateSourceFileNode(sourceFile, [
+  ts.createImportDeclaration(
+    /* decorators */ undefined,
+    /* modifiers */ undefined,
+    ts.createImportClause(
+      ts.createIdentifier('DefaultImport'),
+      ts.createNamedImports([
+        ts.createImportSpecifier(undefined, ts.createIdentifier('NamedImport')),
+      ])
+    ),
+    ts.createLiteral('package')
+  ),
+  // Ensures the rest of the source files statements are still defined.
+  ...sourceFile.statements,
+]);
+```
+
+Which results in adding this import to the top of the `SourceFile`:
+
+```ts
+import DefaultImport from 'NamedImport';
+```
 
 ### Scope
+
+#### Pushing a variable declaration to the top of its scope
+
+Sometimes you may want to push a `VariableDeclaration` so you can assign to it.
+Remember that this only hoists the variable -
+the assignment will still be where it was in the source.
+
+```diff
+function functionOne() {
++  var innerOne;
++  var innerTwo;
+  const innerOne = true;
+  const innerTwo = true;
+}
+```
+
+#### Pushing a variable declaration to a parent scope
+
+> **TODO** - Is this possible?
 
 #### Checking if a local variable is referenced
 
@@ -898,6 +972,8 @@ const visitor = (node: ts.Node): ts.Node => {
 #### Evaluating expressions
 
 #### Following module imports
+
+#### Transforming jsx
 
 #### Determining the jsx pragma
 

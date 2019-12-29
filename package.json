@@ -1,5 +1,14 @@
 {
+  "private": true,
   "scripts": {
-    "generate-toc": "npx markdown-toc -i ./translations/en/transformer-handbook.md "
+    "generate-toc": "npx markdown-toc -i ./translations/en/transformer-handbook.md",
+    "build-examples": "sh ./examples/build.sh"
+  },
+  "devDependencies": {
+    "ttypescript": "^1.5.8",
+    "typescript": "^3.7.4"
+  },
+  "dependencies": {
+    "ts-node": "^8.5.4"
   }
 }
