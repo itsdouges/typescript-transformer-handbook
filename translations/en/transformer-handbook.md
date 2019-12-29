@@ -2,6 +2,43 @@
 
 This document covers how to write a [Typescript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
+- [Introduction](#introduction)
+- [The basics](#the-basics)
+  - [What are abstract syntax trees (ASTs)](#what-are-abstract-syntax-trees--asts-)
+  - [Stages of Typescript](#stages-of-typescript)
+    - [A Program according to Typescript](#a-program-according-to-typescript)
+  - [Traversal](#traversal)
+    - [visitNode()](#visitnode--)
+    - [visitEachChild()](#visiteachchild--)
+    - [visitor](#visitor)
+    - [context](#context)
+  - [Scopes](#scopes)
+- [API](#api)
+- [Writing your first transformer](#writing-your-first-transformer)
+- [Types of transformers](#types-of-transformers)
+  - [Transformer options](#transformer-options)
+  - [Consuming transformers](#consuming-transformers)
+- [Transformation operations](#transformation-operations)
+  - [Visiting](#visiting)
+    - [Checking a node is a certain type](#checking-a-node-is-a-certain-type)
+    - [Check if an identifier is referenced](#check-if-an-identifier-is-referenced)
+    - [Find a specific parent](#find-a-specific-parent)
+    - [Stopping traversal](#stopping-traversal)
+  - [Manipulation](#manipulation)
+    - [Replacing a node](#replacing-a-node)
+    - [Replacing a node with multiple nodes](#replacing-a-node-with-multiple-nodes)
+    - [Inserting a sibling node](#inserting-a-sibling-node)
+    - [Inserting into a container](#inserting-into-a-container)
+    - [Removing a node](#removing-a-node)
+    - [Adding new import declarations](#adding-new-import-declarations)
+  - [Scope](#scope)
+    - [Checking if a local variable is referenced](#checking-if-a-local-variable-is-referenced)
+    - [Generating a UID](#generating-a-uid)
+    - [Pushing a variable declaration to a parent scope](#pushing-a-variable-declaration-to-a-parent-scope)
+    - [Rename a binding and its references](#rename-a-binding-and-its-references)
+- [Building nodes](#building-nodes)
+- [Unit testing](#unit-testing)
+
 ## Introduction
 
 Typescript is a typed superset of Javascript that compiles to plain Javascript.
@@ -287,6 +324,8 @@ We'll see our first look at a simple Typescript transformer soon.
 #### Inserting into a container
 
 #### Removing a node
+
+#### Adding new import declarations
 
 ### Scope
 
