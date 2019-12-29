@@ -55,6 +55,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Following module imports](#following-module-imports)
     - [Transforming jsx](#transforming-jsx)
     - [Determining the file pragma](#determining-the-file-pragma)
+- [Throwing a syntax error to ease the developer experience](#throwing-a-syntax-error-to-ease-the-developer-experience)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
 
@@ -445,8 +446,9 @@ we've briefly gone over a few of them above.
 These methods are useful for modifying a `node` in some form.
 
 - `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
+
   > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source
- 
+
 - `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
 - `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
 
@@ -1078,6 +1080,10 @@ The source file below would cause the if statement to be true.
 
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
 so you'll have to cast it to `any` to gain access to it.
+
+## Throwing a syntax error to ease the developer experience
+
+> **TODO** - Is this possible like it is in Babel? Or we use a [language service plugin](https://github.com/Microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin)?
 
 ## Testing
 
