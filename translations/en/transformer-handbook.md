@@ -12,8 +12,8 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Traversal](#traversal)
     - [visitNode()](#visitnode--)
     - [visitEachChild()](#visiteachchild--)
-    - [visitor](#visitor)
-    - [context](#context)
+    - [`visitor`](#-visitor-)
+    - [`context`](#-context-)
   - [Scopes](#scopes)
 - [API](#api)
 - [Writing your first transformer](#writing-your-first-transformer)
@@ -33,13 +33,18 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Inserting into a container](#inserting-into-a-container)
     - [Removing a node](#removing-a-node)
     - [Adding new import declarations](#adding-new-import-declarations)
+    - [Hoisting nodes](#hoisting-nodes)
   - [Scope](#scope)
     - [Checking if a local variable is referenced](#checking-if-a-local-variable-is-referenced)
     - [Generating a UID](#generating-a-uid)
     - [Pushing a variable declaration to a parent scope](#pushing-a-variable-declaration-to-a-parent-scope)
     - [Rename a binding and its references](#rename-a-binding-and-its-references)
+  - [Advanced](#advanced)
+    - [Evaluating expressions](#evaluating-expressions)
+    - [Following module imports](#following-module-imports)
 - [Building nodes](#building-nodes)
 - [Unit testing](#unit-testing)
+- [Gotchas](#gotchas)
 
 ## Introduction
 
@@ -331,6 +336,8 @@ We'll see our first look at a simple Typescript transformer soon.
 
 #### Adding new import declarations
 
+#### Hoisting nodes
+
 ### Scope
 
 #### Checking if a local variable is referenced
@@ -341,6 +348,14 @@ We'll see our first look at a simple Typescript transformer soon.
 
 #### Rename a binding and its references
 
+### Advanced
+
+#### Evaluating expressions
+
+#### Following module imports
+
 ## Building nodes
 
 ## Unit testing
+
+## Gotchas
