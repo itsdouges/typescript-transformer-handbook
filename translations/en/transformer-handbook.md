@@ -2,6 +2,8 @@
 
 This document covers how to write a [Typescript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
+## Table of contents
+
 - [Introduction](#introduction)
 - [The basics](#the-basics)
   - [What are abstract syntax trees (ASTs)](#what-are-abstract-syntax-trees--asts-)
@@ -244,7 +246,7 @@ import * as ts from "typescript";
 ts.visitEachChild(node, visitor, context);
 ```
 
-#### visitor
+#### `visitor`
 
 The `visitor` function is something you'll be using in every Transformer you write.
 The simplest function we could write might look something like this:
@@ -284,7 +286,7 @@ It goes as deep as possible entering each node,
 exiting when it bottoms out,
 and then entering other child nodes that it comes to.
 
-#### context
+#### `context`
 
 Every Transformer will end up receiving the Transformation `context`.
 This context is used both for `visitEachChild`,
