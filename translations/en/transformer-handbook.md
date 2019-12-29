@@ -832,28 +832,32 @@ One is by creating a mutable clone,
 the other is by calling `updateXyz` methods.
 
 ```ts
-const visitor = (node: ts.Node): ts.Node => {
-  if (ts.isIdentifier(node)) {
-    // Will rename all identifiers to NewName
-    const mutableClone = ts.getMutableClone(node);
-    mutableClone.escapedText = 'NewName';
-    return mutableClone;
-  }
-};
+if (ts.isVariableDeclaration(node)) {
+  const newNode = ts.getMutableClone(node) as ts.VariableDeclaration;
+  newNode.initializer = ts.createStringLiteral('mutable-world');
+  return newNode;
+}
+```
+
+```diff
+-const hello = true;
++const hello = "mutable-world";
 ```
 
 You'll notice that you can't mutate unless you `getMutableClone` -
-this is by design.
+**this is by design**.
 
 Alternatively we can `update` the node via the helper methods:
 
 ```ts
-const visitor = (node: ts.Node): ts.Node => {
-  if (ts.isJsxAttribute(node)) {
-    // Will update all react jsx attributes to foo="bar"
-    return ts.updateJsxAttribute(node, ts.createIdentifier('foo'), ts.createStringLiteral('bar'));
-  }
-};
+if (ts.isVariableDeclaration(node)) {
+  return ts.updateVariableDeclaration(node, node.name, node.type, ts.createStringLiteral('world'));
+}
+```
+
+```diff
+-const hello = true;
++const hello = "updated-world";
 ```
 
 #### Replacing a node
@@ -862,28 +866,31 @@ Maybe instead of updating a node we want to completely change it.
 We can do that by just returning... a completely new node!
 
 ```ts
-const visitor = (node: ts.Node): ts.Node => {
-  if (ts.isFunctionDeclaration(node)) {
-    // Will replace any function it finds with an arrow function.
-    return ts.createVariableDeclarationList(
-      [
-        ts.createVariableDeclaration(
-          ts.createIdentifier(node.name.escapedText),
+if (ts.isFunctionDeclaration(node)) {
+  // Will replace any function it finds with an arrow function.
+  return ts.createVariableDeclarationList(
+    [
+      ts.createVariableDeclaration(
+        ts.createIdentifier(node.name.escapedText),
+        undefined,
+        ts.createArrowFunction(
           undefined,
-          ts.createArrowFunction(
-            undefined,
-            undefined,
-            [],
-            undefined,
-            ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-            ts.createBlock([], false)
-          )
-        ),
-      ],
-      ts.NodeFlags.Const
-    );
-  }
-};
+          undefined,
+          [],
+          undefined,
+          ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+          ts.createBlock([], false)
+        )
+      ),
+    ],
+    ts.NodeFlags.Const
+  );
+}
+```
+
+```diff
+-function helloWorld() {}
++const helloWorld = () => {};
 ```
 
 #### Replacing a node with multiple nodes
@@ -901,12 +908,15 @@ But what if you don't want a specific node anymore?
 Return an empty statement!
 
 ```ts
-const visitor = (node: ts.Node): ts.Node => {
-  if (ts.isImportDeclaration(node)) {
-    // Will remove all import declarations
-    return ts.createEmptyStatement();
-  }
-};
+if (ts.isImportDeclaration(node)) {
+  // Will remove all import declarations
+  return ts.createEmptyStatement();
+}
+```
+
+```diff
+import lodash from 'lodash';
+-import lodash from 'lodash';
 ```
 
 #### Adding new import declarations
@@ -922,7 +932,7 @@ ts.updateSourceFileNode(sourceFile, [
     ts.createImportClause(
       ts.createIdentifier('DefaultImport'),
       ts.createNamedImports([
-        ts.createImportSpecifier(undefined, ts.createIdentifier('NamedImport')),
+        ts.createImportSpecifier(undefined, ts.createIdentifier('namedImport')),
       ])
     ),
     ts.createLiteral('package')
@@ -932,10 +942,8 @@ ts.updateSourceFileNode(sourceFile, [
 ]);
 ```
 
-Which results in adding this import to the top of the `SourceFile`:
-
-```ts
-import DefaultImport from 'NamedImport';
+```diff
++import DefaultImport, { namedImport } from "package";
 ```
 
 ### Scope
@@ -946,6 +954,13 @@ Sometimes you may want to push a `VariableDeclaration` so you can assign to it.
 Remember that this only hoists the variable -
 the assignment will still be where it was in the source.
 
+```ts
+if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name)) {
+  context.hoistVariableDeclaration(node.name);
+  return node;
+}
+```
+
 ```diff
 function functionOne() {
 +  var innerOne;
@@ -955,27 +970,105 @@ function functionOne() {
 }
 ```
 
+You can also do this with function declarations:
+
+```ts
+if (ts.isFunctionDeclaration(node)) {
+  context.hoistFunctionDeclaration(node);
+  return node;
+}
+```
+
+```diff
++function functionOne() {
++    console.log('hello, world!');
++}
+if (true) {
+  function functionOne() {
+    console.log('hello, world!');
+  }
+}
+```
+
 #### Pushing a variable declaration to a parent scope
 
 > **TODO** - Is this possible?
 
 #### Checking if a local variable is referenced
 
-#### Generating a UID
+> **TODO** - Is this possible?
 
-#### Pushing a variable declaration to a parent scope
+#### Defining a unique variable
+
+Sometimes you want to add a new variable that has a unique name,
+luckily it's possible without needing to go through any hoops.
+
+```ts
+if (ts.isVariableDeclarationList(node)) {
+  return ts.updateVariableDeclarationList(node, [
+    ...node.declarations,
+    ts.createVariableDeclaration(
+      ts.createUniqueName('hello'),
+      undefined,
+      ts.createStringLiteral('world')
+    ),
+  ]);
+}
+
+return ts.visitEachChild(node, visitor, context);
+```
+
+```diff
+-const hello = 'world';
++const hello = 'world', hello_1 = "world";
+```
 
 #### Rename a binding and its references
+
+> **TODO** - Is this possible in a concise way?
 
 ### Advanced
 
 #### Evaluating expressions
 
+> **TODO** - Is this possible?
+
 #### Following module imports
+
+> **TODO** - Is this possible in a robust way?
 
 #### Transforming jsx
 
-#### Determining the jsx pragma
+Typescript can also transform [JSX](https://reactjs.org/docs/introducing-jsx.html) -
+there are a handful of helper methods to get started.
+All previous methods of visiting and manipulation apply.
+
+- `ts.isJsxXyz(node)`
+- `ts.updateJsxXyz(node, ...)`
+- `ts.createJsxXyz(...)`
+
+Interrogate the typescript import for more details.
+The primary point is you need to create valid JSX -
+however if you ensure the types are valid in your transformer it's very hard to get it wrong.
+
+#### Determining the file pragma
+
+Useful when wanting to know what the file pragma is so you can do something in your transform.
+Say for example we wanted to know if a custom `jsx` pragma is being used:
+
+```ts
+const transformer = sourceFile => {
+  const isCustomJsxPragmaUsed = !!sourceFile.pragmas.get('jsx');
+  if (isCustomJsxPragmaUsed) {
+    // ...
+  }
+
+  return sourceFile;
+};
+```
+
+Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
+so you'll have to cast it to `any` to gain access to it.
 
 ## Testing
 

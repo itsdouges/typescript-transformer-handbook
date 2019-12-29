@@ -4,5 +4,5 @@
     "outDir": "transformed",
     "plugins": [{ "transform": "./transformer.ts", "type": "raw" }]
   },
-  "exclude": ["transformer.ts"]
+  "files": ["source.ts"]
 }

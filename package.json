@@ -2,7 +2,7 @@
   "private": true,
   "scripts": {
     "generate-toc": "npx markdown-toc -i ./translations/en/transformer-handbook.md",
-    "build-examples": "sh ./examples/build.sh"
+    "build-examples": "sh ./example-transformers/build.sh"
   },
   "devDependencies": {
     "ttypescript": "^1.5.8",

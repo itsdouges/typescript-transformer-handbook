@@ -1,0 +1,8 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "transformed",
+    "plugins": [{ "transform": "./transformer.ts", "type": "raw" }]
+  },
+  "files": ["source.ts"]
+}
