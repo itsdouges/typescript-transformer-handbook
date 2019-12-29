@@ -444,6 +444,8 @@ we've briefly gone over a few of them above.
 These methods are useful for modifying a `node` in some form.
 
 - `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
+  > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source
+ 
 - `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
 - `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
 
