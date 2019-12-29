@@ -44,16 +44,17 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Inserting a sibling node](#inserting-a-sibling-node)
     - [Removing a node](#removing-a-node)
     - [Adding new import declarations](#adding-new-import-declarations)
-    - [Hoisting nodes](#hoisting-nodes)
   - [Scope](#scope)
-    - [Checking if a local variable is referenced](#checking-if-a-local-variable-is-referenced)
-    - [Generating a UID](#generating-a-uid)
+    - [Pushing a variable declaration to the top of its scope](#pushing-a-variable-declaration-to-the-top-of-its-scope)
     - [Pushing a variable declaration to a parent scope](#pushing-a-variable-declaration-to-a-parent-scope)
+    - [Checking if a local variable is referenced](#checking-if-a-local-variable-is-referenced)
+    - [Defining a unique variable](#defining-a-unique-variable)
     - [Rename a binding and its references](#rename-a-binding-and-its-references)
   - [Advanced](#advanced)
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
-    - [Determining the jsx pragma](#determining-the-jsx-pragma)
+    - [Transforming jsx](#transforming-jsx)
+    - [Determining the file pragma](#determining-the-file-pragma)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
 
@@ -1067,6 +1068,12 @@ const transformer = sourceFile => {
 
   return sourceFile;
 };
+```
+
+The source file below would cause the if statement to be true.
+
+```ts
+/** @jsx jsx */
 ```
 
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
