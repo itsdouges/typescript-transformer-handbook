@@ -1,6 +1,6 @@
 # Typescript Transformer Handbook
 
-A handbook on how to create transformers for Typescript.
+A handbook on how to create transformers for Typescript which are synonymous with Babel Plugins.
 Inspired by the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook).
 
 **Translations**
@@ -9,9 +9,14 @@ Inspired by the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook).
 
 ## Pull requests encouraged
 
-This handbook is by no means an exhaustive list of how to best write and consumer Typescript Transformers!
-If see any parts that can be improved or updated,
-or new information that can be added,
-please submit a PR so we can all benefit 😊!
+This handbook is by no means an exhaustive list of how to best write and consume Typescript Transformers,
+if you see any parts that can be:
 
-> Reach out to me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse.
+- improved
+- updated
+- added
+- translated
+
+Please submit a PR or create an issue so everyone can benefit!
+
+> Follow me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse

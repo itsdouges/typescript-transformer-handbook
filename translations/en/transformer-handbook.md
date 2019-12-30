@@ -2,6 +2,8 @@
 
 This document covers how to write a [Typescript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
+## Table of contents
+
 <!-- toc -->
 
 - [Introduction](#introduction)
@@ -65,28 +67,33 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 
 Typescript is a typed superset of Javascript that compiles to plain Javascript.
 Typescript supports the ability for consumers to _transform_ code from one form to another,
-similarly to how [Babel](https://babeljs.io/) has _plugins_.
+similar to how [Babel](https://babeljs.io/) does it with _plugins_.
 
-> Reach out to me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse.
+> Follow me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse
 
 ## The basics
 
-Transformers are essentially a function that looks like this:
+A transformer when boiled down is essentially a function that takes and returns some piece of code,
+for example:
 
 ```js
 const Transformer = code => code;
 ```
 
-The main difference though is that instead of being given a `string` of the code -
-you are supplied with the AST,
+The difference though is that instead of `code` being of type `string` -
+it is actually in the form of an abstract syntax tree (AST),
 described below.
+With it we can do powerful things like updating,
+replacing,
+adding,
+& deleting `node`s.
 
-### What are abstract syntax trees (ASTs)
+### What is a abstract syntax tree (AST)
 
 Abstract Syntax Trees,
 or ASTs,
-are a data structure that describes what the code that has been parsed.
-When working with AST's in Typescript I'd strongly recommend using an AST explorer -
+are a data structure that describes the code that has been parsed.
+When working with ASTs in Typescript I'd strongly recommend using an AST explorer -
 such as [ts-ast-viewer.com](https://ts-ast-viewer.com).
 
 Using such a tool we can see that the following code:
@@ -97,7 +104,7 @@ function hello() {
 }
 ```
 
-In its AST representation it looks like this:
+In its AST representation looks like this:
 
 ```
 -> SourceFile
@@ -113,13 +120,12 @@ In its AST representation it looks like this:
   - EndOfFileToken
 ```
 
-And for a more detailed look just interrogate the [AST yourself here](https://ts-ast-viewer.com/#code/GYVwdgxgLglg9mABACwKYBt10QCgJSIDeAUImYhAgM5zqoB0WA5jgOQDucATugCat4A3MQC+QA)!
-You can view how the code AST could be generated in the bottom left panel,
-and the node metadata in the right panel.
+For a more detailed look check out the [AST yourself](https://ts-ast-viewer.com/#code/GYVwdgxgLglg9mABACwKYBt10QCgJSIDeAUImYhAgM5zqoB0WA5jgOQDucATugCat4A3MQC+QA)!
+You can see also see the code that you can use the generate the same AST in the bottom left panel,
+and the selected node metadata in the right panel.
+Super useful!
 
-When investigating the metadata you'll notice they are have similar structure:
-
-> Some properties have been omitted for simplicity.
+When looking at the metadata you'll notice they all have a similar structure (some properties have been omitted):
 
 ```js
 {
@@ -149,7 +155,7 @@ When investigating the metadata you'll notice they are have similar structure:
 }
 ```
 
-> SyntaxKind is a Typescript enum which describes the kind of node.
+> `SyntaxKind` is a Typescript enum which describes the kind of node.
 > For [more information have a read of Basarat's AST tip](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast-tip-syntaxkind.html).
 
 And so on.
@@ -157,10 +163,11 @@ Each of these describe a `Node`.
 ASTs can be made from one to many -
 and together they describe the syntax of a program that can be used for static analysis.
 
-Every node has a `kind` property which describes what kind of node it is.
-We will talk about how to narrow the node to a specific type of node later.
+Every node has a `kind` property which describes what kind of node it is,
+as well as `pos` and `end` which describe where in the source they are.
+We will talk about how to narrow the node to a specific type of node later in the handbook.
 
-### Stages of Typescript
+### Stages
 
 Very similar to Babel -
 Typescript has three primary stages,
@@ -169,7 +176,7 @@ Typescript has three primary stages,
 **emit**.
 
 With two extra steps that are exclusive to Typescript,
-**binding** and **checker** (which relate to the _semantics_/type correctness,
+**binding** and **checking** (which relate to the _semantics_/type correctness,
 which for the most part we're going to skimp over in this handbook).
 
 > For a more in-depth understanding of the Typescript compiler internals have a read of [Basarat's handbook](https://basarat.gitbooks.io/typescript/content/docs/compiler/overview.html).
@@ -187,15 +194,56 @@ project out.
 This is why enums don't work when parsing Typescript with Babel for example,
 it just doesn't have all the information available.
 
+#### Parse
+
+The Typescript parser actually has two parts,
+the `scanner`,
+and then the `parser`.
+This step will convert source code into an AST.
+
+```
+SourceCode ~~ scanner ~~> Token Stream ~~ parser ~~> AST
+```
+
+I definitely recommend reading the [Parser section](https://basarat.gitbooks.io/typescript/content/docs/compiler/parser.html) in the Typescript Handbook.
+
+#### Transform
+
+This is the step we're all here for.
+It allows us,
+the developer,
+to change the code in any way we see fit.
+Performance optimizations,
+compile time behavior,
+really anything we can imagine.
+
+There are three stages of `transform` we care about:
+
+- `before` - which run transformers before the Typescript ones (code has not been compiled)
+- `after` - which run transformers _after_ the Typescript ones (code has been compiled)
+- `afterDeclarations` - which run transformers _after_ the **declaration** step (you can transform type defs here)
+
+Generally the 90% case will see us always writing transformers for the `before` stage,
+but if you need to do some post-compilation transformation,
+or modify types,
+you'll end up wanting to use `after` and `afterDeclarations`.
+
+#### Emit
+
+This stage happens last and is responsible for _emitting_ the final code somewhere.
+Generally this is usually to the file system -
+but it could also be in memory.
+
 ### Traversal
 
-When wanting to transform the AST to you to traverse the tree recursively.
+When wanting to modify the AST in any way you need to traverse the tree -
+recursively.
 In more concrete terms we want to _visit each node_,
 and then return either the same,
 an updated,
 or a completely new node.
 
-If we take the previous code examples AST in JSON format (with some values omitted):
+If we take the previous example AST in JSON format (with some values omitted):
 
 ```js
 {
@@ -234,8 +282,9 @@ If we take the previous code examples AST in JSON format (with some values omitt
 }
 ```
 
-We start at the `SourceFile` and then work through each node.
-You might think you could meticulously traverse it yourself like `source.statements[0].name` etc,
+If we were to traverse it we would start at the `SourceFile` and then work through each node.
+You might think you could meticulously traverse it yourself,
+like `source.statements[0].name` etc,
 but you'll find it won't scale and is prone to breaking very easily -
 so use it wisely.
 
@@ -244,7 +293,7 @@ Typescript gives us two primary methods for doing this:
 
 #### `visitNode()`
 
-Generally you'll only pass this the initial `SourceFile`.
+Generally you'll only pass this the initial `SourceFile` node.
 We'll go into what the `visitor` function is soon.
 
 ```ts
@@ -255,7 +304,7 @@ ts.visitNode(sourceFile, visitor);
 
 #### `visitEachChild()`
 
-This is a special function that uses `visitNode` under the hood.
+This is a special function that uses `visitNode` internally.
 It will handle traversing down to the inner most node -
 and it knows how to do it without you having the think about it.
 We'll go into what the `context` object is soon.
@@ -268,39 +317,43 @@ ts.visitEachChild(node, visitor, context);
 
 #### `visitor`
 
-The `visitor` function is something you'll be using in every Transformer you write.
+The [`visitor` pattern](https://en.wikipedia.org/wiki/Visitor_pattern) is something you'll be using in every Transformer you write,
+luckily for us Typescript handles it so we need to only supply a callback function.
 The simplest function we could write might look something like this:
 
 ```ts
 import * as ts from 'typescript';
 
-const visitor = (node: ts.Node): ts.Node => {
-  console.log(node.kind);
-  return ts.visitEachChild(node, visitor, context);
-};
+const transformer = sourceFile => {
+  const visitor = (node: ts.Node): ts.Node => {
+    console.log(node.kind, `\t# ts.SyntaxKind.${ts.SyntaxKind[node.kind]}`);
+    return ts.visitEachChild(node, visitor, context);
+  };
 
-return ts.visitNode(sourceFile, visitor);
+  return ts.visitNode(sourceFile, visitor);
+};
 ```
 
 > **Note** - You'll see that we're _returning_ each node.
 > This is required!
 > If we didn't you'd see some funky errors.
 
-If we applied this to the code example used before we would see this logged in our console:
+If we applied this to the code example used before we would see this logged in our console (comments added afterwords):
 
 ```sh
-288 # (SyntaxKind.SourceFile)
-243 # (SyntaxKind.FunctionDeclaration)
-75  # (SyntaxKind.Identifier)
-222 # (SyntaxKind.Block)
-225 # (SyntaxKind.ExpressionStatement)
-195 # (SyntaxKind.CallExpression)
-193 # (SyntaxKind.PropertyAccessExpression)
-75  # (SyntaxKind.Identifier)
-75  # (SyntaxKind.Identifier)
-10  # (SyntaxKind.StringLiteral)
-1   # (SyntaxKind.EndOfFileToken)
+288 	# ts.SyntaxKind.SourceFile
+243 	# ts.SyntaxKind.FunctionDeclaration
+75  	# ts.SyntaxKind.Identifier
+222 	# ts.SyntaxKind.Block
+225 	# ts.SyntaxKind.ExpressionStatement
+195 	# ts.SyntaxKind.CallExpression
+193 	# ts.SyntaxKind.PropertyAccessExpression
+75  	# ts.SyntaxKind.Identifier
+75  	# ts.SyntaxKind.Identifier
+10  	# ts.SyntaxKind.StringLiteral
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/log-every-node](/example-transformers/log-every-node)
 
 It goes as deep as possible entering each node,
 exiting when it bottoms out,
@@ -308,7 +361,7 @@ and then entering other child nodes that it comes to.
 
 #### `context`
 
-Every Transformer will end up receiving the Transformation `context`.
+Every transformer will receive the transformation `context`.
 This context is used both for `visitEachChild`,
 as well as doing some useful things like getting a hold of what the current Typescript configuration is.
 We'll see our first look at a simple Typescript transformer soon.
@@ -318,9 +371,8 @@ We'll see our first look at a simple Typescript transformer soon.
 > Most of this content is taken directly from the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md#scopes) as the same principles apply.
 
 Next let's introduce the concept of a [scope](<https://en.wikipedia.org/wiki/Scope_(computer_science)>).
-JavaScript has lexical scoping,
+Javascript has lexical scoping ([closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures)),
 which is a tree structure where blocks create new scope.
-This is the same principle as [closures](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Closures).
 
 ```js
 // global scope
@@ -334,7 +386,7 @@ function scopeOne() {
 }
 ```
 
-Whenever you create a reference in JavaScript,
+Whenever you create a reference in Javascript,
 whether that be by a variable,
 function,
 class,
@@ -380,8 +432,7 @@ function scopeOne() {
 }
 ```
 
-When writing a transform,
-we want to be wary of scope.
+When writing a transform we want to be wary of scope.
 We need to make sure we don't break existing code while modifying different parts of it.
 
 We may want to add new references and make sure they don't collide with existing ones.
@@ -409,10 +460,10 @@ function scopeOnce() {
 
 > **TODO** - See how we can refer to bindings in a transformer.
 
-## API
+## Transformer API
 
-When writing your transformer you'll most likely be writing it using Typescript.
-You'll want to using the [`typescript`](https://www.npmjs.com/package/typescript) package to do most of the heavy lifting.
+When writing your transformer you'll want to write it using Typescript.
+You'll be using the [`typescript`](https://www.npmjs.com/package/typescript) package to do most of the heavy lifting.
 It is used for everything,
 unlike Babel which has separate small packages.
 
@@ -423,7 +474,7 @@ let's install it.
 npm i typescript --save
 ```
 
-And then let's bring it into scope (assuming we're in a `.ts` file for our transformer):
+And then let's import it:
 
 ```ts
 import * as ts from 'typescript';
@@ -447,7 +498,7 @@ These methods are useful for modifying a `node` in some form.
 
 - `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
 
-  > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source
+  > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of Typescript source - instead of meticulously writing out an AST for a node you can write a code string and have it converted to AST for you.
 
 - `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
 - `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
@@ -455,16 +506,16 @@ These methods are useful for modifying a `node` in some form.
 ### `context`
 
 Covered above,
-this is supplied to every transformer and has some handy methods available to modify the current context (this is not an exhaustive list,
+this is supplied to every transformer and has some handy methods available (this is not an exhaustive list,
 just the stuff we care about):
 
 - `getCompilerOptions()` - Gets the compiler options supplied to the transformer
-- `hoistFunctionDeclaration(node)` - Hoists a function declaration to the containing scope
-- `hoistVariableDeclaration(node)` - Hoists a variable declaration to the containing scope
+- `hoistFunctionDeclaration(node)` - Hoists a function declaration to the top of the containing scope
+- `hoistVariableDeclaration(node)` - Hoists a variable declaration to the tope of the containing scope
 
 ### `program`
 
-This is a special property that is available via a `TransformerFactory`.
+This is a special property that is available when writing a Program transformer.
 We will cover this kind of transformer in [Types of transformers](#types-of-transformers).
 It contains metadata about the _entire program_,
 such as (this is not an exhaustive list,
@@ -548,9 +599,9 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return node;
 +    };
 +
-+    ts.visitNode(sourceFile, visitor);
-
-    return sourceFile;
++    return ts.visitNode(sourceFile, visitor);
+-
+-    return sourceFile;
   };
 };
 
@@ -572,9 +623,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return ts.visitEachChild(node, visitor, context);
     };
 
-    ts.visitNode(sourceFile, visitor);
-
-    return sourceFile;
+    return ts.visitNode(sourceFile, visitor);
   };
 };
 
@@ -596,9 +645,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    ts.visitNode(sourceFile, visitor);
-
-    return sourceFile;
+    return ts.visitNode(sourceFile, visitor);
   };
 };
 
@@ -618,17 +665,15 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +          case 'babel':
 +            // rename babel
 +
-+          case 'plugin':
-+            // rename plugin
++          case 'plugins':
++            // rename plugins
 +        }
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    ts.visitNode(sourceFile, visitor);
-
-    return sourceFile;
+    return ts.visitNode(sourceFile, visitor);
   };
 };
 
@@ -648,17 +693,15 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
           case 'babel':
 +            return ts.createIdentifier('typescript');
 
-          case 'plugin':
-+            return ts.createIdentifier('transformer');
+          case 'plugins':
++            return ts.createIdentifier('transformers');
         }
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    ts.visitNode(sourceFile, visitor);
-
-    return sourceFile;
+    return ts.visitNode(sourceFile, visitor);
   };
 };
 
@@ -666,24 +709,18 @@ export default transformer;
 ```
 
 Sweet!
-We run this over our source code and we get this output:
+When ran over our source code we get this output:
 
 ```ts
 typescript === transformers;
 ```
 
+> **Tip** - You can see the source for this at [/example-transformers/my-first-transformer](/example-transformers/my-first-transformer)
+
 ## Types of transformers
 
 All transformers end up returning the `TransformerFactory` type signature.
-These types of transformers are taken verbatim from [`ttypescript`](https://github.com/cevek/ttypescript).
-
-### Transformer step
-
-Transformers can run in two distinct steps,
-**before** compilation,
-and **after** compilation.
-However they will always run _after_ type checking,
-by design.
+These types of transformers are taken from [`ttypescript`](https://github.com/cevek/ttypescript).
 
 ### Factory
 
@@ -691,12 +728,13 @@ Also known as `raw`,
 this is the same as the one used in writing your first transformer.
 
 ```ts
+// ts.TransformerFactory
 (context: ts.TransformationContext) => (sourceFile: ts.SourceFile) => ts.SourceFile;
 ```
 
 ### Config
 
-When your transformer wants config that can be controlled by consumers.
+When your transformer needs config that can be controlled by consumers.
 
 ```ts
 (config?: YourPluginConfigInterface) => ts.TransformerFactory;
@@ -721,7 +759,7 @@ Regardless you can consume transformers it's just a little round-about.
 
 ### [`ttypescript`](https://github.com/cevek/ttypescript)
 
-> This is the recommended approach!
+> **This is the recommended approach**!
 > Hopefully in the future this can be officially supported in `typescript`.
 
 Essentially a wrapper over the top of the `tsc` CLI -
@@ -739,7 +777,7 @@ Add your transformer into the compiler options:
 ```json
 {
   "compilerOptions": {
-    "plugins": [{ "transform": "my-transformer" }]
+    "plugins": [{ "transform": "my-first-transformer" }]
   }
 }
 ```
@@ -756,6 +794,7 @@ Parcel,
 Rollup,
 Jest,
 & VSCode.
+Everything we would want to use TBH.
 
 ### `webpack`
 
@@ -768,7 +807,7 @@ Using either [`awesome-typescript-loader`](https://github.com/s-panferov/awesome
   // or
   loader: require.resolve('ts-loader'),
   options: {
-      compiler: 'ttypescript'
+      compiler: 'ttypescript' // recommended, allows you to define transformers in tsconfig.json
       // or
       getCustomTransformers: program => {
         before: [yourBeforeTransformer(program, { customConfig: true })],
@@ -801,6 +840,7 @@ import * as ts from 'typescript';
 
 const visitor = (node: ts.Node): ts.Node => {
   if (ts.isJsxAttribute(node.parent)) {
+    // node.parent is a jsx attribute
     // ...
   }
 };
@@ -828,6 +868,8 @@ const visitor = (node: ts.Node): ts.Node => {
 };
 ```
 
+> **TODO** - Is there a way to completely halt traversal?
+
 ### Manipulation
 
 #### Updating a node
@@ -849,6 +891,8 @@ if (ts.isVariableDeclaration(node)) {
 +const hello = "mutable-world";
 ```
 
+> **Tip** - You can see the source for this at [/example-transformers/update-mutable-node](/example-transformers/update-mutable-node)
+
 You'll notice that you can't mutate unless you `getMutableClone` -
 **this is by design**.
 
@@ -864,6 +908,8 @@ if (ts.isVariableDeclaration(node)) {
 -const hello = true;
 +const hello = "updated-world";
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node)
 
 #### Replacing a node
 
@@ -898,6 +944,8 @@ if (ts.isFunctionDeclaration(node)) {
 +const helloWorld = () => {};
 ```
 
+> **Tip** - You can see the source for this at [/example-transformers/replace-node](/example-transformers/replace-node)
+
 #### Replacing a node with multiple nodes
 
 > **TODO** - Is this possible?
@@ -923,6 +971,8 @@ if (ts.isImportDeclaration(node)) {
 import lodash from 'lodash';
 -import lodash from 'lodash';
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/remove-node](/example-transformers/remove-node)
 
 #### Adding new import declarations
 
@@ -951,6 +1001,8 @@ ts.updateSourceFileNode(sourceFile, [
 +import DefaultImport, { namedImport } from "package";
 ```
 
+> **Tip** - You can see the source for this at [/example-transformers/add-import-declaration](/example-transformers/add-import-declaration)
+
 ### Scope
 
 #### Pushing a variable declaration to the top of its scope
@@ -975,6 +1027,8 @@ function functionOne() {
 }
 ```
 
+> **Tip** - You can see the source for this at [/example-transformers/hoist-variable-declaration](/example-transformers/hoist-variable-declaration)
+
 You can also do this with function declarations:
 
 ```ts
@@ -994,6 +1048,8 @@ if (true) {
   }
 }
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/hoist-function-declaration](/example-transformers/hoist-function-declaration)
 
 #### Pushing a variable declaration to a parent scope
 
@@ -1027,6 +1083,8 @@ return ts.visitEachChild(node, visitor, context);
 -const hello = 'world';
 +const hello = 'world', hello_1 = "world";
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/create-unique-name](/example-transformers/create-unique-name)
 
 #### Rename a binding and its references
 
@@ -1063,20 +1121,22 @@ Say for example we wanted to know if a custom `jsx` pragma is being used:
 
 ```ts
 const transformer = sourceFile => {
-  const isCustomJsxPragmaUsed = !!sourceFile.pragmas.get('jsx');
-  if (isCustomJsxPragmaUsed) {
-    // ...
+  const jsxPragma = sourceFile.pragmas.get('jsx');
+  if (jsxPragma) {
+    console.log(`a jsx pragma was found using the factory "${jsxPragma.arguments.factory}"`);
   }
 
   return sourceFile;
 };
 ```
 
-The source file below would cause the if statement to be true.
+The source file below would cause `'a jsx pragma was found using the factory "jsx"'` to be logged to console.
 
 ```ts
 /** @jsx jsx */
 ```
+
+> **Tip** - You can see the source for this at [/example-transformers/pragma-check](/example-transformers/pragma-check)
 
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
 so you'll have to cast it to `any` to gain access to it.
@@ -1087,20 +1147,20 @@ so you'll have to cast it to `any` to gain access to it.
 
 ## Testing
 
-Generally with transformers the the usefulness of unit level tests is quite limited.
-I recommend writing integration tests (even under the guise of unit tests) to stretch your tests to be super useful and resilient.
+Generally with transformers the the usefulness of unit tests is quite limited.
+I recommend writing integration tests to allow your tests to be super useful and resilient.
 This boils down to:
 
-- Write integration tests
-- Avoid snapshot tests - only do it if it makes sense - the larger the snapshot the less useful it is
-- Try to pick apart specific behavior for every test you write - and only assert one thing per test
+- **Write integration tests** over unit tests
+- Avoid snapshot tests - only do it if it makes sense - **the larger the snapshot the less useful it is**
+- Try to pick apart specific behavior for every test you write - and only **assert one thing per test**
 
 If you want you can use the [Typescript compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function) to setup your transformer for testing,
 but I'd recommend using a library instead.
 
 ### [`ts-transformer-testing-library`](https://github.com/marionebl/ts-transformer-testing-library)
 
-This library makes testing transformers easier.
+This library makes testing transformers easy.
 It is made to be used in conjunction with a test runner such as [`jest`](https://github.com/facebook/jest).
 It simplifies the setup of your transformer,
 but still allows you to write your tests as you would for any other piece of software.
