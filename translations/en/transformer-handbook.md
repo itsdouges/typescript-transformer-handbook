@@ -123,7 +123,7 @@ In its AST representation looks like this:
 ```
 
 For a more detailed look check out the [AST yourself](https://ts-ast-viewer.com/#code/GYVwdgxgLglg9mABACwKYBt10QCgJSIDeAUImYhAgM5zqoB0WA5jgOQDucATugCat4A3MQC+QA)!
-You can see also see the code that you can use the generate the same AST in the bottom left panel,
+You can also see the code can be used to generate the same AST in the bottom left panel,
 and the selected node metadata in the right panel.
 Super useful!
 
@@ -1100,7 +1100,39 @@ return ts.visitEachChild(node, visitor, context);
 
 #### Following module imports
 
+Following imports is possible -
+however I'm not currently sure it's supported in user land.
+This also may or may not break when type checking is turned off.
+
 > **TODO** - Is this possible in a robust way?
+
+```ts
+if (
+  ts.isImportDeclaration(node) &&
+  ts.isStringLiteral(node.moduleSpecifier) &&
+  ts.isNamedImports(node.importClause.namedBindings)
+) {
+  const moduleImportName = node.moduleSpecifier.text;
+  const { resolvedFileName } = sourceFile.resolvedModules.get(moduleImportName);
+  const moduleSourceFile = program.getSourceFile(resolvedFileName);
+
+  moduleSourceFile.symbol.exports.forEach((_, key) => {
+    console.log(`found export ${key}`);
+  });
+
+  return node;
+}
+```
+
+Which will log this to the console:
+
+```
+found export hello
+found export default
+```
+
+> **Tip** - You can s
+> ee the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
 
 #### Transforming jsx
 
