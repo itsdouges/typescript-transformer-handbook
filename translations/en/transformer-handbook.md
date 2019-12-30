@@ -1063,7 +1063,7 @@ if (true) {
 
 #### Defining a unique variable
 
-Sometimes you want to add a new variable that has a unique name,
+Sometimes you want to add a new variable that has a unique name within its scope,
 luckily it's possible without needing to go through any hoops.
 
 ```ts
