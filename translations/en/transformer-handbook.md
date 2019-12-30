@@ -441,8 +441,6 @@ We may want to add new references and make sure they don't collide with existing
 Or maybe we just want to find where a variable is referenced.
 We want to be able to track these references within a given scope.
 
-> **TODO** - See how we can refer to a scope in a transformer.
-
 #### Bindings
 
 References all belong to a particular scope;
@@ -459,8 +457,6 @@ function scopeOnce() {
   }
 }
 ```
-
-> **TODO** - See how we can refer to bindings in a transformer.
 
 ## Transformer API
 
@@ -530,6 +526,14 @@ just the stuff we care about):
 - `getSourceFileByPath(path: Path)` - gets a `SourceFile` using its `path`
 - `getCurrentDirectory()` - gets the current directory string
 - `getTypeChecker()` - gets ahold of the type checker, useful when doing things with [Symbols](https://basarat.gitbooks.io/typescript/content/docs/compiler/binder.html)
+
+### `typeChecker`
+
+This is the result of calling `program.getTypeChecker()`.
+It has a lot of interesting things on in that we'll be interested in when writing transformers.
+
+- `getSymbolAtLocation(node)` - useful for getting the symbol of a node
+- `getExportsOfModule(symbol)` - will return the exports of a module symbol
 
 ## Writing your first transformer
 
@@ -1139,9 +1143,7 @@ return ts.visitEachChild(node, visitor, context);
 
 Following imports is possible -
 however I'm not currently sure it's supported in user land.
-This also may or may not break when type checking is turned off.
-
-> **TODO** - Is this possible in a robust way?
+This doesn't seem to work when type checking is turned off.
 
 ```ts
 // We need to use a Program transformer to get ahold of the program object.
@@ -1149,22 +1151,12 @@ const transformerProgram = (program: ts.Program) => {
   const transformerFactory: ts.TransformerFactory<ts.SourceFile> = context => {
     return sourceFile => {
       const visitor = (node: ts.Node): ts.Node => {
-        if (
-          ts.isImportDeclaration(node) &&
-          ts.isStringLiteral(node.moduleSpecifier) &&
-          ts.isNamedImports(node.importClause.namedBindings)
-        ) {
-          // Grab the module name
-          const moduleImportName = node.moduleSpecifier.text;
-          // Grab the modules file name
-          const { resolvedFileName } = (sourceFile as any).resolvedModules.get(moduleImportName);
-          // Grab the modules source file
-          const moduleSourceFile = program.getSourceFile(resolvedFileName);
+        if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+          const typeChecker = program.getTypeChecker();
+          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
+          const exportSymbols = typeChecker.getExportsOfModule(importSymbol);
 
-          // Access the exports on the source file symbol
-          (moduleSourceFile as any).symbol.exports.forEach((_, key) => {
-            console.log(`found export ${key}`);
-          });
+          exportSymbols.forEach(symbol => console.log(`found "${symbol.escapedName}" export`));
 
           return node;
         }
@@ -1183,12 +1175,11 @@ const transformerProgram = (program: ts.Program) => {
 Which will log this to the console:
 
 ```
-found export hello
-found export default
+found "hello" export
+found "default" export
 ```
 
-> **Tip** - You can s
-> ee the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
+> **Tip** - You can see the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
 
 #### Transforming jsx
 
