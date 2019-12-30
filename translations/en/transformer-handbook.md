@@ -854,7 +854,44 @@ const visitor = (node: ts.Node): ts.Node => {
 
 #### Find a specific parent
 
-> **TODO** - Is this possible?
+While there doesn't exist an out of the box method you can basically roll your own.
+Given a node:
+
+```ts
+const findParent = (node: ts.Node, predicate: (node: ts.Node) => boolean) => {
+  if (!node.parent) {
+    return undefined;
+  }
+
+  if (predicate(node.parent)) {
+    return node.parent;
+  }
+
+  return findParent(node.parent, predicate);
+};
+
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isStringLiteral(node)) {
+    const parent = findParent(node, ts.isFunctionDeclaration);
+    if (parent) {
+      console.log('string literal has a function declaration parent');
+    }
+    return node;
+  }
+};
+```
+
+Will log to console `string literal has a function declaration parent` with the following source:
+
+```ts
+function hello() {
+  if (true) {
+    'world';
+  }
+}
+```
+
+> **Tip** - You can see the source for this at [/example-transformers/find-parent](/example-transformers/find-parent)
 
 #### Stopping traversal
 
@@ -1107,21 +1144,40 @@ This also may or may not break when type checking is turned off.
 > **TODO** - Is this possible in a robust way?
 
 ```ts
-if (
-  ts.isImportDeclaration(node) &&
-  ts.isStringLiteral(node.moduleSpecifier) &&
-  ts.isNamedImports(node.importClause.namedBindings)
-) {
-  const moduleImportName = node.moduleSpecifier.text;
-  const { resolvedFileName } = sourceFile.resolvedModules.get(moduleImportName);
-  const moduleSourceFile = program.getSourceFile(resolvedFileName);
+// We need to use a Program transformer to get ahold of the program object.
+const transformerProgram = (program: ts.Program) => {
+  const transformerFactory: ts.TransformerFactory<ts.SourceFile> = context => {
+    return sourceFile => {
+      const visitor = (node: ts.Node): ts.Node => {
+        if (
+          ts.isImportDeclaration(node) &&
+          ts.isStringLiteral(node.moduleSpecifier) &&
+          ts.isNamedImports(node.importClause.namedBindings)
+        ) {
+          // Grab the module name
+          const moduleImportName = node.moduleSpecifier.text;
+          // Grab the modules file name
+          const { resolvedFileName } = (sourceFile as any).resolvedModules.get(moduleImportName);
+          // Grab the modules source file
+          const moduleSourceFile = program.getSourceFile(resolvedFileName);
 
-  moduleSourceFile.symbol.exports.forEach((_, key) => {
-    console.log(`found export ${key}`);
-  });
+          // Access the exports on the source file symbol
+          (moduleSourceFile as any).symbol.exports.forEach((_, key) => {
+            console.log(`found export ${key}`);
+          });
 
-  return node;
-}
+          return node;
+        }
+
+        return ts.visitEachChild(node, visitor, context);
+      };
+
+      return ts.visitNode(sourceFile, visitor);
+    };
+  };
+
+  return transformerFactory;
+};
 ```
 
 Which will log this to the console:
@@ -1177,7 +1233,8 @@ so you'll have to cast it to `any` to gain access to it.
 
 ## Throwing a syntax error to ease the developer experience
 
-> **TODO** - Is this possible like it is in Babel? Or we use a [language service plugin](https://github.com/Microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin)?
+> **TODO** - Is this possible like it is in Babel?
+> Or we use a [language service plugin](https://github.com/Microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin)?
 
 ## Testing
 
