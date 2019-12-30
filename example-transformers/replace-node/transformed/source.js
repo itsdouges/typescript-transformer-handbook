@@ -1,1 +1,1 @@
-const helloWorld = () => { }
+function helloWorld() { }

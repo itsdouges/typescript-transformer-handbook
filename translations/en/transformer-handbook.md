@@ -172,14 +172,16 @@ We will talk about how to narrow the node to a specific type of node later in th
 ### Stages
 
 Very similar to Babel -
-Typescript has three primary stages,
-**parse**,
+Typescript however has five stages,
+**parser**,
+_binder_,
+_checker_,
 **transform**,
-**emit**.
+**emitting**.
 
-With two extra steps that are exclusive to Typescript,
-**binding** and **checking** (which relate to the _semantics_/type correctness,
-which for the most part we're going to skimp over in this handbook).
+Two steps are exclusive to Typescript,
+_binder_ and _checker_.
+We are going to gloss over _checker_ as it relates to Typescripts type checking specifics.
 
 > For a more in-depth understanding of the Typescript compiler internals have a read of [Basarat's handbook](https://basarat.gitbooks.io/typescript/content/docs/compiler/overview.html).
 
@@ -196,7 +198,7 @@ project out.
 This is why enums don't work when parsing Typescript with Babel for example,
 it just doesn't have all the information available.
 
-#### Parse
+#### Parser
 
 The Typescript parser actually has two parts,
 the `scanner`,
@@ -207,9 +209,20 @@ This step will convert source code into an AST.
 SourceCode ~~ scanner ~~> Token Stream ~~ parser ~~> AST
 ```
 
-I definitely recommend reading the [Parser section](https://basarat.gitbooks.io/typescript/content/docs/compiler/parser.html) in the Typescript Handbook.
+The parser takes source code and tries to convert it into an in-memory AST representation which you can work with in the compiler. Also: see [Parser](https://basarat.gitbooks.io/typescript/content/docs/compiler/parser.html).
 
-#### Transform
+##### Scanner
+
+The scanner is used by the parser to convert a string into tokens in a linear fashion,
+then it's up to a parser to tree-ify them.
+Also: see [Scanner](https://basarat.gitbooks.io/typescript/docs/compiler/scanner.html).
+
+#### Binder
+
+Creates a symbol map and uses the AST to provide the type system which is important to link references and to be able to know the nodes of imports and exports.
+Also: see [Binder](https://basarat.gitbooks.io/typescript/docs/compiler/binder.htmlhttps://basarat.gitbooks.io/typescript/docs/compiler/binder.html).
+
+#### Transforms
 
 This is the step we're all here for.
 It allows us,
@@ -230,7 +243,7 @@ but if you need to do some post-compilation transformation,
 or modify types,
 you'll end up wanting to use `after` and `afterDeclarations`.
 
-#### Emit
+#### Emitting
 
 This stage happens last and is responsible for _emitting_ the final code somewhere.
 Generally this is usually to the file system -
@@ -500,6 +513,9 @@ These methods are useful for modifying a `node` in some form.
 
 - `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
 - `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
+- `ts.setOriginalNode(newNode, parentNode)` - useful for setting a nodes original (parent) node
+- `ts.setXyz(...)` - sets things
+- `ts.addXyz(...)` - adds things
 
 ### `context`
 
