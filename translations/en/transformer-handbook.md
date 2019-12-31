@@ -11,9 +11,11 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [What is a abstract syntax tree (AST)](#what-is-a-abstract-syntax-tree-ast)
   - [Stages](#stages)
     - [A Program according to Typescript](#a-program-according-to-typescript)
-    - [Parse](#parse)
-    - [Transform](#transform)
-    - [Emit](#emit)
+    - [Parser](#parser)
+      - [Scanner](#scanner)
+    - [Binder](#binder)
+    - [Transforms](#transforms)
+    - [Emitting](#emitting)
   - [Traversal](#traversal)
     - [`visitNode()`](#visitnode)
     - [`visitEachChild()`](#visiteachchild)
@@ -26,6 +28,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Nodes](#nodes)
   - [`context`](#context-1)
   - [`program`](#program)
+  - [`typeChecker`](#typechecker)
 - [Writing your first transformer](#writing-your-first-transformer)
 - [Types of transformers](#types-of-transformers)
   - [Factory](#factory)
@@ -62,6 +65,8 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 - [Throwing a syntax error to ease the developer experience](#throwing-a-syntax-error-to-ease-the-developer-experience)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
+- [Known bugs](#known-bugs)
+  - [EmitResolver cannot handle `JsxOpeningLikeElement` and `JsxOpeningFragment` that didn't originate from the parse tree](#emitresolver-cannot-handle-jsxopeninglikeelement-and-jsxopeningfragment-that-didnt-originate-from-the-parse-tree)
 
 <!-- tocstop -->
 
@@ -1292,3 +1297,30 @@ it('should add react default import if it only has named imports', () => {
   expect(actual).toIncludeRepeated('import React, { useState } from "react"', 1);
 });
 ```
+
+## Known bugs
+
+### EmitResolver cannot handle `JsxOpeningLikeElement` and `JsxOpeningFragment` that didn't originate from the parse tree
+
+If you replace a node with a new jsx element like this:
+
+```tsx
+const visitor = node => {
+  return ts.createJsxFragment(ts.createJsxOpeningFragment(), [], ts.createJsxJsxClosingFragment());
+};
+```
+
+It will blow up if there are any surrounding `const` or `let` variables.
+A work around is to ensure the opening/closing elements are passed into `ts.setOriginalNode`:
+
+```diff
+ts.createJsxFragment(
+-  ts.createJsxOpeningFragment(),
++  ts.setOriginalNode(ts.createJsxOpeningFragment(), node),
+  [],
+-  ts.createJsxJsxClosingFragment()
++  ts.setOriginalNode(ts.createJsxJsxClosingFragment(), node)
+);
+```
+
+See https://github.com/microsoft/TypeScript/issues/35686 for more information.
