@@ -790,7 +790,7 @@ Regardless you can consume transformers it's just a little round-about.
 > Hopefully in the future this can be officially supported in `typescript`.
 
 Essentially a wrapper over the top of the `tsc` CLI -
-this gives first class support to transformers vis the `tsconfig.json`.
+this gives first class support to transformers via the `tsconfig.json`.
 It has `typescript` listed as a peer dependency so the theory is it isn't too brittle.
 
 Install:
