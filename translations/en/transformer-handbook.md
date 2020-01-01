@@ -940,9 +940,21 @@ const visitor = (node: ts.Node): ts.Node => {
 
 #### Updating a node
 
-There are two ways we generally can update a node.
-One is by creating a mutable clone,
-the other is by calling `updateXyz` methods.
+```ts
+if (ts.isVariableDeclaration(node)) {
+  return ts.updateVariableDeclaration(node, node.name, node.type, ts.createStringLiteral('world'));
+}
+```
+
+```diff
+-const hello = true;
++const hello = "updated-world";
+```
+
+> **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node)
+
+Alternatively we can mutate the node via `getMutableClone(node)` **FYI there is a bug in `ts-loader` that makes this not work well,
+strong advise for now is to NOT use this**:
 
 ```ts
 if (ts.isVariableDeclaration(node)) {
@@ -961,21 +973,6 @@ if (ts.isVariableDeclaration(node)) {
 
 You'll notice that you can't mutate unless you `getMutableClone` -
 **this is by design**.
-
-Alternatively we can `update` the node via the helper methods:
-
-```ts
-if (ts.isVariableDeclaration(node)) {
-  return ts.updateVariableDeclaration(node, node.name, node.type, ts.createStringLiteral('world'));
-}
-```
-
-```diff
--const hello = true;
-+const hello = "updated-world";
-```
-
-> **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node)
 
 #### Replacing a node
 
@@ -1351,3 +1348,11 @@ ts.createJsxFragment(
 ```
 
 See https://github.com/microsoft/TypeScript/issues/35686 for more information.
+
+### `getMutableClone(node)` blows up when used with `ts-loader`
+
+There seems to be a problem with `ts-loader` where it causes type checking to be triggered a second time when using `getMutableClone(node)` -
+this leads to undefined behavior in transformers and generally ends up having it blow up.
+Strong advice to steer clear of this method for now.
+
+See: {tbd raised issue here}
