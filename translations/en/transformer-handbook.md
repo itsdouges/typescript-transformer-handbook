@@ -250,6 +250,10 @@ but if you need to do some post-compilation transformation,
 or modify types,
 you'll end up wanting to use `after` and `afterDeclarations`.
 
+> **Tip** - Type checking _should_ not happen after transforming.
+> If it does it's more than likely a bug -
+> file an issue!
+
 #### Emitting
 
 This stage happens last and is responsible for _emitting_ the final code somewhere.
@@ -520,7 +524,7 @@ These methods are useful for modifying a `node` in some form.
 
 - `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
 - `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
-- `ts.setOriginalNode(newNode, parentNode)` - useful for setting a nodes original (parent) node
+- `ts.setOriginalNode(newNode, originalNode)` - useful for setting a nodes original node
 - `ts.setXyz(...)` - sets things
 - `ts.addXyz(...)` - adds things
 
@@ -917,6 +921,9 @@ function hello() {
   }
 }
 ```
+
+- Be careful when traversing after replacing a node with another - `parent` may not be set.
+  If you need to traverse after transforming make sure to set `parent` on the node yourself.
 
 > **Tip** - You can see the source for this at [/example-transformers/find-parent](/example-transformers/find-parent)
 
