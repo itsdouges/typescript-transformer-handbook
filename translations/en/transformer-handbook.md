@@ -62,7 +62,9 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Following module imports](#following-module-imports)
     - [Transforming jsx](#transforming-jsx)
     - [Determining the file pragma](#determining-the-file-pragma)
-- [Throwing a syntax error to ease the developer experience](#throwing-a-syntax-error-to-ease-the-developer-experience)
+- [Tips & tricks](#tips--tricks)
+  - [Composing transformers](#composing-transformers)
+  - [Throwing a syntax error to ease the developer experience](#throwing-a-syntax-error-to-ease-the-developer-experience)
 - [Testing](#testing)
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
 - [Known bugs](#known-bugs)
@@ -1243,7 +1245,32 @@ The source file below would cause `'a jsx pragma was found using the factory "js
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
 so you'll have to cast it to `any` to gain access to it.
 
-## Throwing a syntax error to ease the developer experience
+## Tips & tricks
+
+### Composing transformers
+
+If you're like me sometimes you want to split your big transformer up into small more maintainable pieces.
+Well luckily with a bit of coding elbow grease we can achieve this:
+
+```ts
+const transformers = [...];
+
+function transformer(
+  program: ts.Program,
+): ts.TransformerFactory<ts.SourceFile> {
+  return context => {
+    const initializedTransformers = transformers.map(transformer => transformer(program)(context));
+
+    return sourceFile => {
+      return initializedTransformers.reduce((source, transformer) => {
+        return transformer(source);
+      }, sourceFile);
+    };
+  };
+}
+```
+
+### Throwing a syntax error to ease the developer experience
 
 > **TODO** - Is this possible like it is in Babel?
 > Or we use a [language service plugin](https://github.com/Microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin)?
