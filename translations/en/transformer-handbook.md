@@ -888,7 +888,7 @@ Then, the linker runs through these identifiers and connects the identifiers ref
 
 So, to check if two identifiers refer to the same symbol - just get the symbols related to the identifier and check if they are the same (by reference).
 
-Short example -
+**Short example** -
 
 ```ts
 const symbol1 = typeChecker.getSymbolAtLocation(node1);
@@ -897,7 +897,7 @@ const symbol2 = typeChecker.getSymbolAtLocation(node2);
 symbol1 === symbol2 // check by reference
 ```
 
-Full example -
+**Full example** -
 
 This will log all repeating symbols.
 
