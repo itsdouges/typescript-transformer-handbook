@@ -12,7 +12,7 @@ const transformerProgram = (program: ts.Program) => {
         if (ts.isIdentifier(node)) {
           const relatedSymbol = typeChecker.getSymbolAtLocation(node);
 
-          // Check if set already contains same symbol - check by reference
+          // Check if array already contains same symbol - check by reference
           if (foundSymbols.includes(relatedSymbol)) {
             const foundIndex = foundSymbols.indexOf(relatedSymbol);
             console.log(
