@@ -1132,7 +1132,7 @@ a = 2;
 ```
 > **Tip** - You can see the source for this at [/example-transformers/return-multiple-node](/example-transformers/return-multiple-node)
 
-The declaration statement (first line) is ignored as it's not a   `ExpressionStatement`.
+The declaration statement (first line) is ignored as it's not a `ExpressionStatement`.
 
 *Note* - Make sure that what you are trying to do actually makes sense in the AST. For ex., returning two expressions instead of one is often just invalid.
 
