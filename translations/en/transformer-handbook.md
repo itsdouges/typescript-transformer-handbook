@@ -1086,11 +1086,61 @@ if (ts.isFunctionDeclaration(node)) {
 
 #### Replacing a node with multiple nodes
 
-> **TODO** - Is this possible?
+Interestingly, a visitor function can also return a array of nodes instead of just one node.
+That means, even though it gets one node as input, it can return multiple nodes which replaces that input node.
+
+```ts
+export type Visitor = (node: Node) => VisitResult<Node>;
+export type VisitResult<T extends Node> = T | T[] | undefined;
+```
+
+Let's just replace every expression statement with two copies of the same statement (duplicating it) -
+
+```ts
+const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
+  return sourceFile => {
+    const visitor = (node: ts.Node): ts.VisitResult<ts.Node> => {
+      // If it is a expression statement,
+      if (ts.isExpressionStatement(node)) {
+        // Clone it
+        const newNode = ts.getMutableClone(node);
+        // And return it twice.
+        // Effectively duplicating the statement
+        return [node, newNode];
+      }
+
+      return ts.visitEachChild(node, visitor, context);
+    };
+
+    return ts.visitNode(sourceFile, visitor);
+  };
+};
+```
+So,
+
+```ts
+let a = 1;
+a = 2;
+```
+
+becomes
+
+```js
+let a = 1;
+a = 2;
+a = 2;
+```
+
+The declaration statement (first line) is ignored as it's not a   `ExpressionStatement`.
+
+*Note* - Make sure that what you are trying to do actually makes sense in the AST. For ex., returning two expressions instead of one is often just invalid.
+
+Say there is a assignment expression (BinaryExpression with with EqualToken operator), `a = b = 2`. Now returning two nodes instead of `b = 2` expression is invalid (because right hand side can not be multiple nodes). So, TS will throw an error - `Debug Failure. False expression: Too many nodes written to output.`
+
 
 #### Inserting a sibling node
 
-> **TODO** - Is this possible?
+This is effectively same as the [previous section](#replacing-a-node-with-multiple-nodes). Just return a array of nodes including itself and other sibling nodes.
 
 #### Removing a node
 
