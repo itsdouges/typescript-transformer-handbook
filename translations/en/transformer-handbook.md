@@ -41,7 +41,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 - [Transformation operations](#transformation-operations)
   - [Visiting](#visiting-1)
     - [Checking a node is a certain type](#checking-a-node-is-a-certain-type)
-    - [Check if an identifier is referenced](#check-if-an-identifier-is-referenced)
+    - [Check if two identifiers refer to the same symbol](#check-if-two-identifiers-refer-to-the-same-symbol)
     - [Find a specific parent](#find-a-specific-parent)
     - [Stopping traversal](#stopping-traversal)
   - [Manipulation](#manipulation)
@@ -879,9 +879,77 @@ const visitor = (node: ts.Node): ts.Node => {
 };
 ```
 
-#### Check if an identifier is referenced
+#### Check if two identifiers refer to the same symbol
 
-> **TODO** - Is this possible?
+Identifiers are created by the parser and are always unique.
+Say, if you create a variable `foo` and use it in another line, it will create 2 separate identifiers with the same text `foo`.
+
+Then, the linker runs through these identifiers and connects the identifiers referring to the same variable with a common symbol (while considering scope and shadowing). Think of symbols as what we intuitively think as variables.
+
+So, to check if two identifiers refer to the same symbol - just get the symbols related to the identifier and check if they are the same (by reference).
+
+**Short example** -
+
+```ts
+const symbol1 = typeChecker.getSymbolAtLocation(node1);
+const symbol2 = typeChecker.getSymbolAtLocation(node2);
+
+symbol1 === symbol2 // check by reference
+```
+
+**Full example** -
+
+This will log all repeating symbols.
+
+```ts
+import * as ts from 'typescript';
+
+const transformerProgram = (program: ts.Program) => {
+  const typeChecker = program.getTypeChecker();
+
+  // Create array of found symbols
+  const foundSymbols = new Array<ts.Symbol>();
+
+  const transformerFactory: ts.TransformerFactory<ts.SourceFile> = context => {
+    return sourceFile => {
+      const visitor = (node: ts.Node): ts.Node => {
+        if (ts.isIdentifier(node)) {
+          const relatedSymbol = typeChecker.getSymbolAtLocation(node);
+
+          // Check if array already contains same symbol - check by reference
+          if (foundSymbols.includes(relatedSymbol)) {
+            const foundIndex = foundSymbols.indexOf(relatedSymbol);
+            console.log(
+              `Found existing symbol at position = ${foundIndex} and name = "${relatedSymbol.name}"`
+            );
+          } else {
+            // If not found, Add it to array
+            foundSymbols.push(relatedSymbol);
+
+            console.log(
+              `Found new symbol with name = "${
+                relatedSymbol.name
+              }". Added at positon = ${foundSymbols.length - 1}`
+            );
+          }
+
+          return node;
+        }
+
+        return ts.visitEachChild(node, visitor, context);
+      };
+
+      return ts.visitNode(sourceFile, visitor);
+    };
+  };
+
+  return transformerFactory;
+};
+
+export default transformerProgram;
+```
+
+> **Tip** - You can see the source for this at [/example-transformers/match-identifier-by-symbol](/example-transformers/match-identifier-by-symbol)
 
 #### Find a specific parent
 
