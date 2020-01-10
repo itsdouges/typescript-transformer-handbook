@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@atlaskit/theme": "^9.5.0",
+    "@types/node": "^13.1.6",
+    "@types/react": "^16.9.17",
+    "@types/react-dom": "^16.9.4",
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0",
+    "styled-components": "^3.4.10"
+  }
+}
