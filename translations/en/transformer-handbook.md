@@ -60,6 +60,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Advanced](#advanced)
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
+      - [Following node module imports](#following-node-module-imports)
     - [Transforming jsx](#transforming-jsx)
     - [Determining the file pragma](#determining-the-file-pragma)
 - [Tips & tricks](#tips--tricks)
@@ -69,6 +70,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [`ts-transformer-testing-library`](#ts-transformer-testing-library)
 - [Known bugs](#known-bugs)
   - [EmitResolver cannot handle `JsxOpeningLikeElement` and `JsxOpeningFragment` that didn't originate from the parse tree](#emitresolver-cannot-handle-jsxopeninglikeelement-and-jsxopeningfragment-that-didnt-originate-from-the-parse-tree)
+  - [`getMutableClone(node)` blows up when used with `ts-loader`](#getmutableclonenode-blows-up-when-used-with-ts-loader)
 
 <!-- tocstop -->
 
@@ -894,7 +896,7 @@ So, to check if two identifiers refer to the same symbol - just get the symbols 
 const symbol1 = typeChecker.getSymbolAtLocation(node1);
 const symbol2 = typeChecker.getSymbolAtLocation(node2);
 
-symbol1 === symbol2 // check by reference
+symbol1 === symbol2; // check by reference
 ```
 
 **Full example** -
@@ -1114,6 +1116,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
   };
 };
 ```
+
 So,
 
 ```ts
@@ -1128,14 +1131,14 @@ let a = 1;
 a = 2;
 a = 2;
 ```
+
 > **Tip** - You can see the source for this at [/example-transformers/return-multiple-node](/example-transformers/return-multiple-node)
 
 The declaration statement (first line) is ignored as it's not a `ExpressionStatement`.
 
-*Note* - Make sure that what you are trying to do actually makes sense in the AST. For ex., returning two expressions instead of one is often just invalid.
+_Note_ - Make sure that what you are trying to do actually makes sense in the AST. For ex., returning two expressions instead of one is often just invalid.
 
 Say there is a assignment expression (BinaryExpression with with EqualToken operator), `a = b = 2`. Now returning two nodes instead of `b = 2` expression is invalid (because right hand side can not be multiple nodes). So, TS will throw an error - `Debug Failure. False expression: Too many nodes written to output.`
-
 
 #### Inserting a sibling node
 
@@ -1285,9 +1288,7 @@ return ts.visitEachChild(node, visitor, context);
 
 #### Following module imports
 
-Following imports is possible -
-however I'm not currently sure it's supported in user land.
-This doesn't seem to work when type checking is turned off.
+It's possible!
 
 ```ts
 // We need to use a Program transformer to get ahold of the program object.
@@ -1300,7 +1301,13 @@ const transformerProgram = (program: ts.Program) => {
           const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
           const exportSymbols = typeChecker.getExportsOfModule(importSymbol);
 
-          exportSymbols.forEach(symbol => console.log(`found "${symbol.escapedName}" export`));
+          exportSymbols.forEach(symbol =>
+            console.log(
+              `found "${
+                symbol.escapedName
+              }" export with value "${symbol.valueDeclaration.getText()}"`
+            )
+          );
 
           return node;
         }
@@ -1319,11 +1326,48 @@ const transformerProgram = (program: ts.Program) => {
 Which will log this to the console:
 
 ```
-found "hello" export
-found "default" export
+found "hello" export with value "hello = 'world'"
+found "default" export with value "export default 'hello';"
 ```
 
+You can also traverse the imported node as well using `ts.visitChild` and the like.
+
 > **Tip** - You can see the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
+
+##### Following node module imports
+
+Like following Typescript imports for the code that you own,
+sometimes we may want to also interrogate the code inside a module we're importing.
+
+Using the same code above except running on a `node_modules` import we get this logged to the console:
+
+```
+found "mixin" export with value:
+export declare function mixin(): {
+  color: string;
+};"
+found "constMixin" export with value:
+export declare function constMixin(): {
+  color: 'blue';
+};"
+```
+
+For the inquisitive you'll notice we aren't seeing the source code -
+we're seeing the **type definitions**.
+
+This means for static analysis we need as much content compiled into the type def.
+So I have two pro tips for you:
+
+1. Ensure imports you're interested in contain type definitions
+1. Set variables `as const` (if its TS source) to ensure they retain narrowed type information that is more useful for transformers when published e.g:
+
+```
+export const mixin = { color: 'red' } as const;
+```
+
+Which ends up narrowing `'red'` from `string` to `'red'`.
+
+> **Tip** - You can see the source for this at [/example-transformers/follow-node-modules-imports](/example-transformers/follow-node-modules-imports)
 
 #### Transforming jsx
 

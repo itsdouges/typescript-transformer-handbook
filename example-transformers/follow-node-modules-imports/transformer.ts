@@ -13,7 +13,7 @@ const transformerProgram = (program: ts.Program) => {
             console.log(
               `found "${
                 symbol.escapedName
-              }" export with value "${symbol.valueDeclaration.getText()}"`
+              }" export with value:\n${symbol.valueDeclaration.getText()}"`
             )
           );
 
