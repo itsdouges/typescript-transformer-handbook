@@ -1,21 +1,20 @@
 import * as ts from 'typescript';
 
-const transformerProgram = (program: ts.Program) => {
+const transformerProgram = () => {
   const transformerFactory: ts.TransformerFactory<ts.SourceFile> = context => {
     return sourceFile => {
       const visitor = (node: ts.Node): ts.Node => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
-          const typeChecker = program.getTypeChecker();
-          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
-          const exportSymbols = typeChecker.getExportsOfModule(importSymbol);
+          // Find the import location in the file system using require.resolve
+          const pkgEntry = require.resolve(`${node.moduleSpecifier.text}`);
 
-          exportSymbols.forEach(symbol =>
-            console.log(
-              `found "${
-                symbol.escapedName
-              }" export with value:\n${symbol.valueDeclaration.getText()}"`
-            )
-          );
+          // Create another program
+          const innerProgram = ts.createProgram([pkgEntry], {
+            // Important to set this to true!
+            allowJs: true,
+          });
+
+          console.log(innerProgram.getSourceFile(pkgEntry).getText());
 
           return node;
         }

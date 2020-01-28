@@ -2,7 +2,7 @@
 
 This document covers how to write a [Typescript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
-## Table of contents
+# Table of contents
 
 <!-- toc -->
 
@@ -12,7 +12,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Stages](#stages)
     - [A Program according to Typescript](#a-program-according-to-typescript)
     - [Parser](#parser)
-      - [Scanner](#scanner)
+    - [Scanner](#scanner)
     - [Binder](#binder)
     - [Transforms](#transforms)
     - [Emitting](#emitting)
@@ -60,7 +60,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
   - [Advanced](#advanced)
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
-      - [Following node module imports](#following-node-module-imports)
+    - [Following node module imports](#following-node-module-imports)
     - [Transforming jsx](#transforming-jsx)
     - [Determining the file pragma](#determining-the-file-pragma)
 - [Tips & tricks](#tips--tricks)
@@ -74,7 +74,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 
 <!-- tocstop -->
 
-## Introduction
+# Introduction
 
 Typescript is a typed superset of Javascript that compiles to plain Javascript.
 Typescript supports the ability for consumers to _transform_ code from one form to another,
@@ -82,7 +82,7 @@ similar to how [Babel](https://babeljs.io/) does it with _plugins_.
 
 > Follow me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse
 
-## The basics
+# The basics
 
 A transformer when boiled down is essentially a function that takes and returns some piece of code,
 for example:
@@ -99,7 +99,7 @@ replacing,
 adding,
 & deleting `node`s.
 
-### What is a abstract syntax tree (AST)
+## What is a abstract syntax tree (AST)
 
 Abstract Syntax Trees,
 or ASTs,
@@ -178,7 +178,7 @@ Every node has a `kind` property which describes what kind of node it is,
 as well as `pos` and `end` which describe where in the source they are.
 We will talk about how to narrow the node to a specific type of node later in the handbook.
 
-### Stages
+## Stages
 
 Very similar to Babel -
 Typescript however has five stages,
@@ -194,7 +194,7 @@ We are going to gloss over _checker_ as it relates to Typescripts type checking 
 
 > For a more in-depth understanding of the Typescript compiler internals have a read of [Basarat's handbook](https://basarat.gitbooks.io/typescript/content/docs/compiler/overview.html).
 
-#### A Program according to Typescript
+### A Program according to Typescript
 
 Before we continue we need to quickly clarify exactly _what_ a `Program` is according to Typescript.
 A `Program` is a collection of one or more entrypoint source files which consume one or more modules.
@@ -207,7 +207,7 @@ project out.
 This is why enums don't work when parsing Typescript with Babel for example,
 it just doesn't have all the information available.
 
-#### Parser
+### Parser
 
 The Typescript parser actually has two parts,
 the `scanner`,
@@ -220,18 +220,18 @@ SourceCode ~~ scanner ~~> Token Stream ~~ parser ~~> AST
 
 The parser takes source code and tries to convert it into an in-memory AST representation which you can work with in the compiler. Also: see [Parser](https://basarat.gitbooks.io/typescript/content/docs/compiler/parser.html).
 
-##### Scanner
+### Scanner
 
 The scanner is used by the parser to convert a string into tokens in a linear fashion,
 then it's up to a parser to tree-ify them.
 Also: see [Scanner](https://basarat.gitbooks.io/typescript/docs/compiler/scanner.html).
 
-#### Binder
+### Binder
 
 Creates a symbol map and uses the AST to provide the type system which is important to link references and to be able to know the nodes of imports and exports.
 Also: see [Binder](https://basarat.gitbooks.io/typescript/docs/compiler/binder.htmlhttps://basarat.gitbooks.io/typescript/docs/compiler/binder.html).
 
-#### Transforms
+### Transforms
 
 This is the step we're all here for.
 It allows us,
@@ -256,13 +256,13 @@ you'll end up wanting to use `after` and `afterDeclarations`.
 > If it does it's more than likely a bug -
 > file an issue!
 
-#### Emitting
+### Emitting
 
 This stage happens last and is responsible for _emitting_ the final code somewhere.
 Generally this is usually to the file system -
 but it could also be in memory.
 
-### Traversal
+## Traversal
 
 When wanting to modify the AST in any way you need to traverse the tree -
 recursively.
@@ -319,7 +319,7 @@ so use it wisely.
 Ideally for the 90% case you'll want to use the built in methods to traverse the AST.
 Typescript gives us two primary methods for doing this:
 
-#### `visitNode()`
+### `visitNode()`
 
 Generally you'll only pass this the initial `SourceFile` node.
 We'll go into what the `visitor` function is soon.
@@ -330,7 +330,7 @@ import * as ts from 'typescript';
 ts.visitNode(sourceFile, visitor);
 ```
 
-#### `visitEachChild()`
+### `visitEachChild()`
 
 This is a special function that uses `visitNode` internally.
 It will handle traversing down to the inner most node -
@@ -343,7 +343,7 @@ import * as ts from 'typescript';
 ts.visitEachChild(node, visitor, context);
 ```
 
-#### `visitor`
+### `visitor`
 
 The [`visitor` pattern](https://en.wikipedia.org/wiki/Visitor_pattern) is something you'll be using in every Transformer you write,
 luckily for us Typescript handles it so we need to only supply a callback function.
@@ -387,14 +387,14 @@ It goes as deep as possible entering each node,
 exiting when it bottoms out,
 and then entering other child nodes that it comes to.
 
-#### `context`
+### `context`
 
 Every transformer will receive the transformation `context`.
 This context is used both for `visitEachChild`,
 as well as doing some useful things like getting a hold of what the current Typescript configuration is.
 We'll see our first look at a simple Typescript transformer soon.
 
-### Scopes
+## Scopes
 
 > Most of this content is taken directly from the [Babel Handbook](https://github.com/jamiebuilds/babel-handbook/blob/master/translations/en/plugin-handbook.md#scopes) as the same principles apply.
 
@@ -467,7 +467,7 @@ We may want to add new references and make sure they don't collide with existing
 Or maybe we just want to find where a variable is referenced.
 We want to be able to track these references within a given scope.
 
-#### Bindings
+### Bindings
 
 References all belong to a particular scope;
 this relationship is known as a binding.
@@ -484,7 +484,7 @@ function scopeOnce() {
 }
 ```
 
-## Transformer API
+# Transformer API
 
 When writing your transformer you'll want to write it using Typescript.
 You'll be using the [`typescript`](https://www.npmjs.com/package/typescript) package to do most of the heavy lifting.
@@ -507,7 +507,7 @@ import * as ts from 'typescript';
 > **Tip** - I _strongly recommend_ using intellisense in VSCode to interrogate the API,
 > it's super useful!
 
-### Visiting
+## Visiting
 
 These methods are useful for visiting nodes -
 we've briefly gone over a few of them above.
@@ -516,7 +516,7 @@ we've briefly gone over a few of them above.
 - `ts.visitEachChild(node, visitor, context)` - useful for visiting each child of a node
 - `ts.isXyz(node)` - useful for narrowing the type of a `node`, an example of this is `ts.isVariableDeclaration(node)`
 
-### Nodes
+## Nodes
 
 These methods are useful for modifying a `node` in some form.
 
@@ -530,7 +530,7 @@ These methods are useful for modifying a `node` in some form.
 - `ts.setXyz(...)` - sets things
 - `ts.addXyz(...)` - adds things
 
-### `context`
+## `context`
 
 Covered above,
 this is supplied to every transformer and has some handy methods available (this is not an exhaustive list,
@@ -540,7 +540,7 @@ just the stuff we care about):
 - `hoistFunctionDeclaration(node)` - Hoists a function declaration to the top of the containing scope
 - `hoistVariableDeclaration(node)` - Hoists a variable declaration to the tope of the containing scope
 
-### `program`
+## `program`
 
 This is a special property that is available when writing a Program transformer.
 We will cover this kind of transformer in [Types of transformers](#types-of-transformers).
@@ -556,7 +556,7 @@ just the stuff we care about):
 - `getCurrentDirectory()` - gets the current directory string
 - `getTypeChecker()` - gets ahold of the type checker, useful when doing things with [Symbols](https://basarat.gitbooks.io/typescript/content/docs/compiler/binder.html)
 
-### `typeChecker`
+## `typeChecker`
 
 This is the result of calling `program.getTypeChecker()`.
 It has a lot of interesting things on in that we'll be interested in when writing transformers.
@@ -564,7 +564,7 @@ It has a lot of interesting things on in that we'll be interested in when writin
 - `getSymbolAtLocation(node)` - useful for getting the symbol of a node
 - `getExportsOfModule(symbol)` - will return the exports of a module symbol
 
-## Writing your first transformer
+# Writing your first transformer
 
 It's the part we've all be waiting for!
 Let's write out first transformer.
@@ -752,12 +752,12 @@ typescript === transformers;
 
 > **Tip** - You can see the source for this at [/example-transformers/my-first-transformer](/example-transformers/my-first-transformer)
 
-## Types of transformers
+# Types of transformers
 
 All transformers end up returning the `TransformerFactory` type signature.
 These types of transformers are taken from [`ttypescript`](https://github.com/cevek/ttypescript).
 
-### Factory
+## Factory
 
 Also known as `raw`,
 this is the same as the one used in writing your first transformer.
@@ -767,7 +767,7 @@ this is the same as the one used in writing your first transformer.
 (context: ts.TransformationContext) => (sourceFile: ts.SourceFile) => ts.SourceFile;
 ```
 
-### Config
+## Config
 
 When your transformer needs config that can be controlled by consumers.
 
@@ -775,7 +775,7 @@ When your transformer needs config that can be controlled by consumers.
 (config?: YourPluginConfigInterface) => ts.TransformerFactory;
 ```
 
-### Program
+## Program
 
 When needing access to the `program` object this is the signature you should use,
 it should return a `TransformerFactory`.
@@ -786,13 +786,13 @@ supplied by consumers.
 (program: ts.Program, config?: YourPluginConfigInterface) => ts.TransformerFactory;
 ```
 
-## Consuming transformers
+# Consuming transformers
 
 Amusingly Typescript has no official support for consuming transformers via `tsconfig.json`.
 There is a [GitHub issue](https://github.com/microsoft/TypeScript/issues/14419) dedicated to talking about introducing something for it.
 Regardless you can consume transformers it's just a little round-about.
 
-### [`ttypescript`](https://github.com/cevek/ttypescript)
+## [`ttypescript`](https://github.com/cevek/ttypescript)
 
 > **This is the recommended approach**!
 > Hopefully in the future this can be officially supported in `typescript`.
@@ -831,7 +831,7 @@ Jest,
 & VSCode.
 Everything we would want to use TBH.
 
-### `webpack`
+## `webpack`
 
 Using either [`awesome-typescript-loader`](https://github.com/s-panferov/awesome-typescript-loader#getcustomtransformers-string--program-tsprogram--tscustomtransformers--undefined-defaultundefined) or [`ts-loader`](https://github.com/TypeStrong/ts-loader#getcustomtransformers) you can either use the `getCustomTransformers()` option (they have the same signature) or you can use `ttypescript`:
 
@@ -852,16 +852,16 @@ Using either [`awesome-typescript-loader`](https://github.com/s-panferov/awesome
 }
 ```
 
-### `parcel`
+## `parcel`
 
 Use `ttypescript` with the `parcel-plugin-ttypescript` plugin.
 See: https://github.com/cevek/ttypescript#parcel
 
-## Transformation operations
+# Transformation operations
 
-### Visiting
+## Visiting
 
-#### Checking a node is a certain type
+### Checking a node is a certain type
 
 There is a wide variety of helper methods that can assert what type a node is.
 When they return true they will _narrow_ the type of the `node`,
@@ -881,7 +881,7 @@ const visitor = (node: ts.Node): ts.Node => {
 };
 ```
 
-#### Check if two identifiers refer to the same symbol
+### Check if two identifiers refer to the same symbol
 
 Identifiers are created by the parser and are always unique.
 Say, if you create a variable `foo` and use it in another line, it will create 2 separate identifiers with the same text `foo`.
@@ -953,7 +953,7 @@ export default transformerProgram;
 
 > **Tip** - You can see the source for this at [/example-transformers/match-identifier-by-symbol](/example-transformers/match-identifier-by-symbol)
 
-#### Find a specific parent
+### Find a specific parent
 
 While there doesn't exist an out of the box method you can basically roll your own.
 Given a node:
@@ -997,7 +997,7 @@ function hello() {
 
 > **Tip** - You can see the source for this at [/example-transformers/find-parent](/example-transformers/find-parent)
 
-#### Stopping traversal
+### Stopping traversal
 
 In the visitor function you can return early instead of continuing down children,
 so for example if we hit a node and we know we don't need to go any further:
@@ -1013,9 +1013,9 @@ const visitor = (node: ts.Node): ts.Node => {
 
 > **TODO** - Is there a way to completely halt traversal?
 
-### Manipulation
+## Manipulation
 
-#### Updating a node
+### Updating a node
 
 ```ts
 if (ts.isVariableDeclaration(node)) {
@@ -1051,7 +1051,7 @@ if (ts.isVariableDeclaration(node)) {
 You'll notice that you can't mutate unless you `getMutableClone` -
 **this is by design**.
 
-#### Replacing a node
+### Replacing a node
 
 Maybe instead of updating a node we want to completely change it.
 We can do that by just returning... a completely new node!
@@ -1086,7 +1086,7 @@ if (ts.isFunctionDeclaration(node)) {
 
 > **Tip** - You can see the source for this at [/example-transformers/replace-node](/example-transformers/replace-node)
 
-#### Replacing a node with multiple nodes
+### Replacing a node with multiple nodes
 
 Interestingly, a visitor function can also return a array of nodes instead of just one node.
 That means, even though it gets one node as input, it can return multiple nodes which replaces that input node.
@@ -1140,11 +1140,11 @@ _Note_ - Make sure that what you are trying to do actually makes sense in the AS
 
 Say there is a assignment expression (BinaryExpression with with EqualToken operator), `a = b = 2`. Now returning two nodes instead of `b = 2` expression is invalid (because right hand side can not be multiple nodes). So, TS will throw an error - `Debug Failure. False expression: Too many nodes written to output.`
 
-#### Inserting a sibling node
+### Inserting a sibling node
 
 This is effectively same as the [previous section](#replacing-a-node-with-multiple-nodes). Just return a array of nodes including itself and other sibling nodes.
 
-#### Removing a node
+### Removing a node
 
 One constraint of a transformer is you must _always_ return a node.
 But what if you don't want a specific node anymore?
@@ -1164,7 +1164,7 @@ import lodash from 'lodash';
 
 > **Tip** - You can see the source for this at [/example-transformers/remove-node](/example-transformers/remove-node)
 
-#### Adding new import declarations
+### Adding new import declarations
 
 Sometimes your transformation will need some runtime part,
 for that you can add your own import declaration.
@@ -1193,9 +1193,9 @@ ts.updateSourceFileNode(sourceFile, [
 
 > **Tip** - You can see the source for this at [/example-transformers/add-import-declaration](/example-transformers/add-import-declaration)
 
-### Scope
+## Scope
 
-#### Pushing a variable declaration to the top of its scope
+### Pushing a variable declaration to the top of its scope
 
 Sometimes you may want to push a `VariableDeclaration` so you can assign to it.
 Remember that this only hoists the variable -
@@ -1241,15 +1241,15 @@ if (true) {
 
 > **Tip** - You can see the source for this at [/example-transformers/hoist-function-declaration](/example-transformers/hoist-function-declaration)
 
-#### Pushing a variable declaration to a parent scope
+### Pushing a variable declaration to a parent scope
 
 > **TODO** - Is this possible?
 
-#### Checking if a local variable is referenced
+### Checking if a local variable is referenced
 
 > **TODO** - Is this possible?
 
-#### Defining a unique variable
+### Defining a unique variable
 
 Sometimes you want to add a new variable that has a unique name within its scope,
 luckily it's possible without needing to go through any hoops.
@@ -1276,17 +1276,17 @@ return ts.visitEachChild(node, visitor, context);
 
 > **Tip** - You can see the source for this at [/example-transformers/create-unique-name](/example-transformers/create-unique-name)
 
-#### Rename a binding and its references
+### Rename a binding and its references
 
 > **TODO** - Is this possible in a concise way?
 
-### Advanced
+## Advanced
 
-#### Evaluating expressions
+### Evaluating expressions
 
 > **TODO** - Is this possible?
 
-#### Following module imports
+### Following module imports
 
 It's possible!
 
@@ -1334,7 +1334,7 @@ You can also traverse the imported node as well using `ts.visitChild` and the li
 
 > **Tip** - You can see the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
 
-##### Following node module imports
+### Following node module imports
 
 Like following Typescript imports for the code that you own,
 sometimes we may want to also interrogate the code inside a module we're importing.
@@ -1352,24 +1352,64 @@ export declare function constMixin(): {
 };"
 ```
 
-For the inquisitive you'll notice we aren't seeing the source code -
-we're seeing the **type definitions**.
+Hmm what - we're getting the type def AST instead of source code...
+Lame!
 
-This means for static analysis we need as much content compiled into the type def.
-So I have two pro tips for you:
+So it turns out it's a little harder for us to get this working (at least out of the box).
+It turns out we have two options :
 
-1. Ensure imports you're interested in contain type definitions
-1. Set variables `as const` (if its TS source) to ensure they retain narrowed type information that is more useful for transformers when published e.g:
+1. Turn on `allowJs` in the tsconfig and the **delete the type def**...
+   which will give us the source AST...
+   but we now won't have type defs...
+   So this isn't desirable.
+2. Create another TS program and do the dirty work ourselves
+
+**Spoiler:** _We're going with option 2_.
+It's more resilient and will work when type checking is turned off -
+which is also how we'll follow Typescript imports in that scenario!
+
+```ts
+const visitor = (node: ts.Node): ts.Node => {
+  if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
+    // Find the import location in the file system using require.resolve
+    const pkgEntry = require.resolve(`${node.moduleSpecifier.text}`);
+
+    // Create another program
+    const innerProgram = ts.createProgram([pkgEntry], {
+      // Important to set this to true!
+      allowJs: true,
+    });
+
+    console.log(innerProgram.getSourceFile(pkgEntry).getText());
+
+    return node;
+  }
+
+  return ts.visitEachChild(node, visitor, context);
+};
+```
+
+Which will log this to the console:
 
 ```
-export const mixin = { color: 'red' } as const;
+export function mixin() {
+  return { color: 'red' };
+}
+
+export function constMixin() {
+  return { color: 'blue' }
+}
 ```
 
-Which ends up narrowing `'red'` from `string` to `'red'`.
+Awesome!
+The cool thing about this btw is that since we've made a _program_ we will get all of _its_ imports followed for free!
+However it'll have the same problem as above if they have type defs -
+so watch out if you need to jump through multiple imports -
+you'll probably have to do something more clever.
 
 > **Tip** - You can see the source for this at [/example-transformers/follow-node-modules-imports](/example-transformers/follow-node-modules-imports)
 
-#### Transforming jsx
+### Transforming jsx
 
 Typescript can also transform [JSX](https://reactjs.org/docs/introducing-jsx.html) -
 there are a handful of helper methods to get started.
@@ -1383,7 +1423,7 @@ Interrogate the typescript import for more details.
 The primary point is you need to create valid JSX -
 however if you ensure the types are valid in your transformer it's very hard to get it wrong.
 
-#### Determining the file pragma
+### Determining the file pragma
 
 Useful when wanting to know what the file pragma is so you can do something in your transform.
 Say for example we wanted to know if a custom `jsx` pragma is being used:
@@ -1410,9 +1450,9 @@ The source file below would cause `'a jsx pragma was found using the factory "js
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
 so you'll have to cast it to `any` to gain access to it.
 
-## Tips & tricks
+# Tips & tricks
 
-### Composing transformers
+## Composing transformers
 
 If you're like me sometimes you want to split your big transformer up into small more maintainable pieces.
 Well luckily with a bit of coding elbow grease we can achieve this:
@@ -1435,12 +1475,12 @@ function transformer(
 }
 ```
 
-### Throwing a syntax error to ease the developer experience
+## Throwing a syntax error to ease the developer experience
 
 > **TODO** - Is this possible like it is in Babel?
 > Or we use a [language service plugin](https://github.com/Microsoft/TypeScript/wiki/Writing-a-Language-Service-Plugin)?
 
-## Testing
+# Testing
 
 Generally with transformers the the usefulness of unit tests is quite limited.
 I recommend writing integration tests to allow your tests to be super useful and resilient.
@@ -1453,7 +1493,7 @@ This boils down to:
 If you want you can use the [Typescript compiler API](https://github.com/microsoft/TypeScript/wiki/Using-the-Compiler-API#a-simple-transform-function) to setup your transformer for testing,
 but I'd recommend using a library instead.
 
-### [`ts-transformer-testing-library`](https://github.com/marionebl/ts-transformer-testing-library)
+## [`ts-transformer-testing-library`](https://github.com/marionebl/ts-transformer-testing-library)
 
 This library makes testing transformers easy.
 It is made to be used in conjunction with a test runner such as [`jest`](https://github.com/facebook/jest).
@@ -1490,9 +1530,9 @@ it('should add react default import if it only has named imports', () => {
 });
 ```
 
-## Known bugs
+# Known bugs
 
-### EmitResolver cannot handle `JsxOpeningLikeElement` and `JsxOpeningFragment` that didn't originate from the parse tree
+## EmitResolver cannot handle `JsxOpeningLikeElement` and `JsxOpeningFragment` that didn't originate from the parse tree
 
 If you replace a node with a new jsx element like this:
 
@@ -1517,7 +1557,7 @@ ts.createJsxFragment(
 
 See https://github.com/microsoft/TypeScript/issues/35686 for more information.
 
-### `getMutableClone(node)` blows up when used with `ts-loader`
+## `getMutableClone(node)` blows up when used with `ts-loader`
 
 There seems to be a problem with `ts-loader` where it causes type checking to be triggered a second time when using `getMutableClone(node)` -
 this leads to undefined behavior in transformers and generally ends up having it blow up.

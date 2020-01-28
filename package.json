@@ -2,8 +2,8 @@
   "private": true,
   "scripts": {
     "generate-toc": "markdown-toc -i ./translations/en/transformer-handbook.md",
-    "build-examples": "sh ./example-transformers/build.sh",
-    "build": "cd ./example-transformers/follow-node-modules-imports && ttsc"
+    "build-all": "sh ./example-transformers/build.sh",
+    "build": "sh ./example-transformers/build-single.sh"
   },
   "dependencies": {
     "markdown-toc": "^1.2.0",

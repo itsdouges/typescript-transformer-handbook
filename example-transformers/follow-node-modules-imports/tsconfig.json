@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
-    "noImplicitAny": true,
+    "noImplicitAny": false,
     "outDir": "transformed",
     "plugins": [{ "transform": "./transformer.ts" }]
   },
