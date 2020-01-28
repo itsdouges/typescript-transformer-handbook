@@ -7,6 +7,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
 <!-- toc -->
 
 - [Introduction](#introduction)
+  - [Running examples](#running-examples)
 - [The basics](#the-basics)
   - [What is a abstract syntax tree (AST)](#what-is-a-abstract-syntax-tree-ast)
   - [Stages](#stages)
@@ -63,6 +64,7 @@ This document covers how to write a [Typescript](https://typescriptlang.org/) [T
     - [Following node module imports](#following-node-module-imports)
     - [Transforming jsx](#transforming-jsx)
     - [Determining the file pragma](#determining-the-file-pragma)
+    - [Resetting the file pragma](#resetting-the-file-pragma)
 - [Tips & tricks](#tips--tricks)
   - [Composing transformers](#composing-transformers)
   - [Throwing a syntax error to ease the developer experience](#throwing-a-syntax-error-to-ease-the-developer-experience)
@@ -81,6 +83,15 @@ Typescript supports the ability for consumers to _transform_ code from one form 
 similar to how [Babel](https://babeljs.io/) does it with _plugins_.
 
 > Follow me [@itsmadou](https://twitter.com/itsmadou) for updates and general discourse
+
+## Running examples
+
+There are multiple examples ready for you to use through this handbook.
+When you want to take the dive make sure to:
+
+1. clone the repo
+2. install deps with `yarn`
+3. build the example you want `yarn build example_name`
 
 # The basics
 
@@ -381,7 +392,7 @@ If we applied this to the code example used before we would see this logged in o
 10  	# ts.SyntaxKind.StringLiteral
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/log-every-node](/example-transformers/log-every-node)
+> **Tip** - You can see the source for this at [/example-transformers/log-every-node](/example-transformers/log-every-node) - if wanting to run locally you can run it via `yarn build log-every-node`.
 
 It goes as deep as possible entering each node,
 exiting when it bottoms out,
@@ -750,7 +761,7 @@ When ran over our source code we get this output:
 typescript === transformers;
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/my-first-transformer](/example-transformers/my-first-transformer)
+> **Tip** - You can see the source for this at [/example-transformers/my-first-transformer](/example-transformers/my-first-transformer) - if wanting to run locally you can run it via `yarn build my-first-transformer`.
 
 # Types of transformers
 
@@ -951,7 +962,7 @@ const transformerProgram = (program: ts.Program) => {
 export default transformerProgram;
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/match-identifier-by-symbol](/example-transformers/match-identifier-by-symbol)
+> **Tip** - You can see the source for this at [/example-transformers/match-identifier-by-symbol](/example-transformers/match-identifier-by-symbol) - if wanting to run locally you can run it via `yarn build match-identifier-by-symbol`.
 
 ### Find a specific parent
 
@@ -995,7 +1006,7 @@ function hello() {
 - Be careful when traversing after replacing a node with another - `parent` may not be set.
   If you need to traverse after transforming make sure to set `parent` on the node yourself.
 
-> **Tip** - You can see the source for this at [/example-transformers/find-parent](/example-transformers/find-parent)
+> **Tip** - You can see the source for this at [/example-transformers/find-parent](/example-transformers/find-parent) - if wanting to run locally you can run it via `yarn build find-parent`.
 
 ### Stopping traversal
 
@@ -1028,7 +1039,7 @@ if (ts.isVariableDeclaration(node)) {
 +const hello = "updated-world";
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node)
+> **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node) - if wanting to run locally you can run it via `yarn build update-node`.
 
 Alternatively we can mutate the node via `getMutableClone(node)` **FYI there is a bug in `ts-loader` that makes this not work well,
 strong advise for now is to NOT use this**:
@@ -1046,7 +1057,7 @@ if (ts.isVariableDeclaration(node)) {
 +const hello = "mutable-world";
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/update-mutable-node](/example-transformers/update-mutable-node)
+> **Tip** - You can see the source for this at [/example-transformers/update-mutable-node](/example-transformers/update-mutable-node) - if wanting to run locally you can run it via `yarn build update-mutable-node`.
 
 You'll notice that you can't mutate unless you `getMutableClone` -
 **this is by design**.
@@ -1084,7 +1095,7 @@ if (ts.isFunctionDeclaration(node)) {
 +const helloWorld = () => {};
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/replace-node](/example-transformers/replace-node)
+> **Tip** - You can see the source for this at [/example-transformers/replace-node](/example-transformers/replace-node) - if wanting to run locally you can run it via `yarn build replace-node`.
 
 ### Replacing a node with multiple nodes
 
@@ -1132,7 +1143,7 @@ a = 2;
 a = 2;
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/return-multiple-node](/example-transformers/return-multiple-node)
+> **Tip** - You can see the source for this at [/example-transformers/return-multiple-node](/example-transformers/return-multiple-node) - if wanting to run locally you can run it via `yarn build return-multiple-node`.
 
 The declaration statement (first line) is ignored as it's not a `ExpressionStatement`.
 
@@ -1162,7 +1173,7 @@ import lodash from 'lodash';
 -import lodash from 'lodash';
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/remove-node](/example-transformers/remove-node)
+> **Tip** - You can see the source for this at [/example-transformers/remove-node](/example-transformers/remove-node) - if wanting to run locally you can run it via `yarn build remove-node`.
 
 ### Adding new import declarations
 
@@ -1191,7 +1202,7 @@ ts.updateSourceFileNode(sourceFile, [
 +import DefaultImport, { namedImport } from "package";
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/add-import-declaration](/example-transformers/add-import-declaration)
+> **Tip** - You can see the source for this at [/example-transformers/add-import-declaration](/example-transformers/add-import-declaration) - if wanting to run locally you can run it via `yarn build add-import-declaration`.
 
 ## Scope
 
@@ -1217,7 +1228,7 @@ function functionOne() {
 }
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/hoist-variable-declaration](/example-transformers/hoist-variable-declaration)
+> **Tip** - You can see the source for this at [/example-transformers/hoist-variable-declaration](/example-transformers/hoist-variable-declaration) - if wanting to run locally you can run it via `yarn build hoist-variable-declaration`.
 
 You can also do this with function declarations:
 
@@ -1239,7 +1250,7 @@ if (true) {
 }
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/hoist-function-declaration](/example-transformers/hoist-function-declaration)
+> **Tip** - You can see the source for this at [/example-transformers/hoist-function-declaration](/example-transformers/hoist-function-declaration) - if wanting to run locally you can run it via `yarn build hoist-function-declaration`.
 
 ### Pushing a variable declaration to a parent scope
 
@@ -1274,7 +1285,7 @@ return ts.visitEachChild(node, visitor, context);
 +const hello = 'world', hello_1 = "world";
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/create-unique-name](/example-transformers/create-unique-name)
+> **Tip** - You can see the source for this at [/example-transformers/create-unique-name](/example-transformers/create-unique-name) - if wanting to run locally you can run it via `yarn build create-unique-name`.
 
 ### Rename a binding and its references
 
@@ -1332,7 +1343,7 @@ found "default" export with value "export default 'hello';"
 
 You can also traverse the imported node as well using `ts.visitChild` and the like.
 
-> **Tip** - You can see the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports)
+> **Tip** - You can see the source for this at [/example-transformers/follow-imports](/example-transformers/follow-imports) - if wanting to run locally you can run it via `yarn build follow-imports`.
 
 ### Following node module imports
 
@@ -1407,7 +1418,7 @@ However it'll have the same problem as above if they have type defs -
 so watch out if you need to jump through multiple imports -
 you'll probably have to do something more clever.
 
-> **Tip** - You can see the source for this at [/example-transformers/follow-node-modules-imports](/example-transformers/follow-node-modules-imports)
+> **Tip** - You can see the source for this at [/example-transformers/follow-node-modules-imports](/example-transformers/follow-node-modules-imports) - if wanting to run locally you can run it via `yarn build follow-node-modules-imports`.
 
 ### Transforming jsx
 
@@ -1445,10 +1456,22 @@ The source file below would cause `'a jsx pragma was found using the factory "js
 /** @jsx jsx */
 ```
 
-> **Tip** - You can see the source for this at [/example-transformers/pragma-check](/example-transformers/pragma-check)
+> **Tip** - You can see the source for this at [/example-transformers/pragma-check](/example-transformers/pragma-check) - if wanting to run locally you can run it via `yarn build pragma-check`.
 
 Currently as of 29/12/2019 `pragmas` is not on the typings for `sourceFile` -
 so you'll have to cast it to `any` to gain access to it.
+
+### Resetting the file pragma
+
+Sometimes during transformation you might want to change the pragma _back_ to the default (in our case React).
+I've found success with the following code:
+
+```ts
+const transformer = sourceFile => {
+  sourceFile.pragmas.clear();
+  delete sourceFile.localJsxFactory;
+};
+```
 
 # Tips & tricks
 
