@@ -1,4 +1,4 @@
-# Transformer Handbook
+# TypeScript Transformer Handbook
 
 This document covers how to write a [TypeScript](https://typescriptlang.org/) [Transformer](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast.html).
 
