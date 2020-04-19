@@ -58,6 +58,8 @@ This document covers how to write a [TypeScript](https://typescriptlang.org/) [T
     - [Checking if a local variable is referenced](#checking-if-a-local-variable-is-referenced)
     - [Defining a unique variable](#defining-a-unique-variable)
     - [Rename a binding and its references](#rename-a-binding-and-its-references)
+  - [Finding](#finding)
+    - [Get line number and column](#get-line-number-and-column)
   - [Advanced](#advanced)
     - [Evaluating expressions](#evaluating-expressions)
     - [Following module imports](#following-module-imports)
@@ -1288,6 +1290,14 @@ return ts.visitEachChild(node, visitor, context);
 ### Rename a binding and its references
 
 > **TODO** - Is this possible in a concise way?
+
+## Finding
+
+### Get line number and column
+
+```
+sourceFile.getLineAndCharacterOfPosition(node.getStart());
+```
 
 ## Advanced
 
