@@ -1157,14 +1157,13 @@ This is effectively same as the [previous section](#replacing-a-node-with-multip
 
 ### Removing a node
 
-One constraint of a transformer is you must _always_ return a node.
-But what if you don't want a specific node anymore?
-Return an empty statement!
+What if you don't want a specific node anymore?
+Return an `undefined`!
 
 ```ts
 if (ts.isImportDeclaration(node)) {
   // Will remove all import declarations
-  return ts.createEmptyStatement();
+  return undefined;
 }
 ```
 
