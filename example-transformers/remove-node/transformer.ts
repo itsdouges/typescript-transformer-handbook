@@ -4,7 +4,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
   return sourceFile => {
     const visitor = (node: ts.Node): ts.Node => {
       if (ts.isImportDeclaration(node)) {
-        return ts.createEmptyStatement();
+        return undefined;
       }
 
       return ts.visitEachChild(node, visitor, context);
