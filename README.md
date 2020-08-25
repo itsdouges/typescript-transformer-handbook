@@ -242,7 +242,7 @@ Also: see [Scanner](https://basarat.gitbooks.io/typescript/docs/compiler/scanner
 ### Binder
 
 Creates a symbol map and uses the AST to provide the type system which is important to link references and to be able to know the nodes of imports and exports.
-Also: see [Binder](https://basarat.gitbooks.io/typescript/docs/compiler/binder.htmlhttps://basarat.gitbooks.io/typescript/docs/compiler/binder.html).
+Also: see [Binder](https://basarat.gitbooks.io/typescript/docs/compiler/binder.html).
 
 ### Transforms
 
