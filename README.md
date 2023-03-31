@@ -180,7 +180,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 ```
 
 > `SyntaxKind` is a TypeScript enum which describes the kind of node.
-> For [more information have a read of Basarat's AST tip](https://basarat.gitbooks.io/typescript/content/docs/compiler/ast-tip-syntaxkind.html).
+> For [more information have a read of Basarat's AST tip](https://basarat.gitbook.io/typescript/overview/ast/ast-tip-syntaxkind).
 
 And so on.
 Each of these describe a `Node`.
@@ -205,7 +205,7 @@ Two steps are exclusive to TypeScript,
 _binder_ and _checker_.
 We are going to gloss over _checker_ as it relates to TypeScripts type checking specifics.
 
-> For a more in-depth understanding of the TypeScript compiler internals have a read of [Basarat's handbook](https://basarat.gitbooks.io/typescript/content/docs/compiler/overview.html).
+> For a more in-depth understanding of the TypeScript compiler internals have a read of [Basarat's handbook](https://basarat.gitbook.io/typescript/).
 
 ### A Program according to TypeScript
 
