@@ -153,7 +153,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 288, // (SyntaxKind.SourceFile)
+  kind: 307, // (SyntaxKind.SourceFile)
   pos: 0,
   end: 47,
   statements: [{...}],
@@ -162,7 +162,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 243, // (SyntaxKind.FunctionDeclaration)
+  kind: 262, // (SyntaxKind.FunctionDeclaration)
   pos: 0,
   end: 47,
   name: {...},
@@ -172,7 +172,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 225, // (SyntaxKind.ExpressionStatement)
+  kind: 244, // (SyntaxKind.ExpressionStatement)
   pos: 19,
   end: 45,
   expression: {...}
@@ -288,33 +288,33 @@ If we take the previous example AST in JSON format (with some values omitted):
 
 ```js
 {
-  kind: 288, // (SyntaxKind.SourceFile)
+  kind: 307, // (SyntaxKind.SourceFile)
   statements: [{
-    kind: 243, // (SyntaxKind.FunctionDeclaration)
+    kind: 262, // (SyntaxKind.FunctionDeclaration)
     name: {
-      kind: 75 // (SyntaxKind.Identifier)
+      kind: 80 // (SyntaxKind.Identifier)
       escapedText: "hello"
     },
     body: {
-      kind: 222, // (SyntaxKind.Block)
+      kind: 241, // (SyntaxKind.Block)
       statements: [{
-        kind: 225, // (SyntaxKind.ExpressionStatement)
+        kind: 244, // (SyntaxKind.ExpressionStatement)
         expression: {
-          kind: 195, // (SyntaxKind.CallExpression)
+          kind: 213, // (SyntaxKind.CallExpression)
           expression: {
-            kind: 193, // (SyntaxKind.PropertyAccessExpression)
+            kind: 211, // (SyntaxKind.PropertyAccessExpression)
             name: {
-              kind: 75 // (SyntaxKind.Identifier)
+              kind: 80 // (SyntaxKind.Identifier)
               escapedText: "log",
             },
             expression: {
-              kind: 75, // (SyntaxKind.Identifier)
+              kind: 80, // (SyntaxKind.Identifier)
               escapedText: "console",
             }
           }
         },
         arguments: [{
-          kind: 10, // (SyntaxKind.StringLiteral)
+          kind: 11, // (SyntaxKind.StringLiteral)
           text: "world",
         }]
       }]
@@ -340,7 +340,7 @@ We'll go into what the `visitor` function is soon.
 ```ts
 import * as ts from 'typescript';
 
-ts.visitNode(sourceFile, visitor);
+ts.visitNode(sourceFile, visitor, test);
 ```
 
 ### `visitEachChild()`
@@ -371,7 +371,7 @@ const transformer = sourceFile => {
     return ts.visitEachChild(node, visitor, context);
   };
 
-  return ts.visitNode(sourceFile, visitor);
+  return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
 };
 ```
 
@@ -382,16 +382,16 @@ const transformer = sourceFile => {
 If we applied this to the code example used before we would see this logged in our console (comments added afterwords):
 
 ```sh
-288 	# ts.SyntaxKind.SourceFile
-243 	# ts.SyntaxKind.FunctionDeclaration
-75  	# ts.SyntaxKind.Identifier
-222 	# ts.SyntaxKind.Block
-225 	# ts.SyntaxKind.ExpressionStatement
-195 	# ts.SyntaxKind.CallExpression
-193 	# ts.SyntaxKind.PropertyAccessExpression
-75  	# ts.SyntaxKind.Identifier
-75  	# ts.SyntaxKind.Identifier
-10  	# ts.SyntaxKind.StringLiteral
+307 	# ts.SyntaxKind.SourceFile
+262 	# ts.SyntaxKind.FunctionDeclaration
+80  	# ts.SyntaxKind.Identifier
+241 	# ts.SyntaxKind.Block
+244 	# ts.SyntaxKind.ExpressionStatement
+213 	# ts.SyntaxKind.CallExpression
+211 	# ts.SyntaxKind.PropertyAccessExpression
+80  	# ts.SyntaxKind.Identifier
+80  	# ts.SyntaxKind.Identifier
+11  	# ts.SyntaxKind.StringLiteral
 ```
 
 > **Tip** - You can see the source for this at [/example-transformers/log-every-node](/example-transformers/log-every-node) - if wanting to run locally you can run it via `yarn build log-every-node`.
@@ -525,7 +525,7 @@ import * as ts from 'typescript';
 These methods are useful for visiting nodes -
 we've briefly gone over a few of them above.
 
-- `ts.visitNode(node, visitor)` - useful for visiting the root node, generally the `SourceFile`
+- `ts.visitNode(node, visitor, test)` - useful for visiting the root node, generally the `SourceFile`
 - `ts.visitEachChild(node, visitor, context)` - useful for visiting each child of a node
 - `ts.isXyz(node)` - useful for narrowing the type of a `node`, an example of this is `ts.isVariableDeclaration(node)`
 
@@ -533,12 +533,12 @@ we've briefly gone over a few of them above.
 
 These methods are useful for modifying a `node` in some form.
 
-- `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
+- `ts.factory.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.factory.createIdentifier('world')`
 
   > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source - instead of meticulously writing out an AST for a node you can write a code string and have it converted to AST for you.
 
-- `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
-- `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
+- `ts.factory.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.factory.updateVariableDeclaration()`
+- `ts.factory.updateSourceFile(sourceFile, ...)` - useful for updating a source file to then return
 - `ts.setOriginalNode(newNode, originalNode)` - useful for setting a nodes original node
 - `ts.setXyz(...)` - sets things
 - `ts.addXyz(...)` - adds things
@@ -635,8 +635,9 @@ babel === plugins;
 ```
 
 Let's write a visitor function,
-remember that a visitor function should take a `node`,
-and then return a `node`.
+remember that a visitor function should take a `node` of a particular kind (here a `SourceFile`),
+and then return a `node` of the same kind. Note that the `test` parameter of `visitNode` can be used
+to ensure that nodes of a particular type are returned.
 
 ```diff
 import * as ts from 'typescript';
@@ -647,7 +648,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return node;
 +    };
 +
-+    return ts.visitNode(sourceFile, visitor);
++    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
 -
 -    return sourceFile;
   };
@@ -671,7 +672,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -693,7 +694,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -721,7 +722,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -739,17 +740,17 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       if (ts.isIdentifier(node)) {
         switch (node.escapedText) {
           case 'babel':
-+            return ts.createIdentifier('typescript');
++            return ts.factory.createIdentifier('typescript');
 
           case 'plugins':
-+            return ts.createIdentifier('transformers');
++            return ts.factory.createIdentifier('transformers');
         }
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
