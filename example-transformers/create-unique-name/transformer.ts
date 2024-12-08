@@ -4,12 +4,13 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
   return sourceFile => {
     const visitor = (node: ts.Node): ts.Node => {
       if (ts.isVariableDeclarationList(node)) {
-        return ts.updateVariableDeclarationList(node, [
+        return ts.factory.updateVariableDeclarationList(node, [
           ...node.declarations,
-          ts.createVariableDeclaration(
-            ts.createUniqueName('hello'),
-            undefined,
-            ts.createStringLiteral('world')
+          ts.factory.createVariableDeclaration(
+            ts.factory.createUniqueName('hello'),
+            undefined /* exclamation token */,
+            undefined /* type */,
+            ts.factory.createStringLiteral('world')
           ),
         ]);
       }
@@ -17,7 +18,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
