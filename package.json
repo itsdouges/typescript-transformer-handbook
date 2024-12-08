@@ -6,6 +6,7 @@
     "build": "sh ./example-transformers/build-single.sh"
   },
   "dependencies": {
+    "@types/node": "^22.10.1",
     "markdown-toc": "^1.2.0",
     "ts-node": "^8.5.4",
     "ts-patch": "^3.3.0",
