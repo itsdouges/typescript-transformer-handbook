@@ -25,7 +25,7 @@ const transformerProgram = (program: ts.Program) => {
             console.log(
               `Found new symbol with name = "${
                 relatedSymbol.name
-              }". Added at positon = ${foundSymbols.length - 1}`
+              }". Added at position = ${foundSymbols.length - 1}`
             );
           }
 
