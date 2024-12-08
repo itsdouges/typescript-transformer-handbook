@@ -4,18 +4,19 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
   return sourceFile => {
     const visitor = (node: ts.Node): ts.Node => {
       if (ts.isVariableDeclaration(node)) {
-        return ts.updateVariableDeclaration(
+        return ts.factory.updateVariableDeclaration(
           node,
           node.name,
+          undefined /* exclamation token */,
           node.type,
-          ts.createStringLiteral('updated-world')
+          ts.factory.createStringLiteral('updated-world')
         );
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
