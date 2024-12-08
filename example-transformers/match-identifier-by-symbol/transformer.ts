@@ -10,7 +10,7 @@ const transformerProgram = (program: ts.Program) => {
     return sourceFile => {
       const visitor = (node: ts.Node): ts.Node => {
         if (ts.isIdentifier(node)) {
-          const relatedSymbol = typeChecker.getSymbolAtLocation(node);
+          const relatedSymbol = typeChecker.getSymbolAtLocation(node)!;
 
           // Check if array already contains same symbol - check by reference
           if (foundSymbols.includes(relatedSymbol)) {
@@ -35,7 +35,7 @@ const transformerProgram = (program: ts.Program) => {
         return ts.visitEachChild(node, visitor, context);
       };
 
-      return ts.visitNode(sourceFile, visitor);
+      return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
     };
   };
 
