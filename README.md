@@ -1413,7 +1413,7 @@ Say for example we wanted to know if a custom `jsx` pragma is being used:
 
 ```ts
 const transformer = sourceFile => {
-  const jsxPragma = sourceFile.pragmas.get('jsx');
+  const jsxPragma = (sourceFile as any).pragmas.get('jsx'); // see below regarding the cast to `any`
   if (jsxPragma) {
     console.log(`a jsx pragma was found using the factory "${jsxPragma.arguments.factory}"`);
   }
@@ -1533,7 +1533,11 @@ If you replace a node with a new jsx element like this:
 
 ```tsx
 const visitor = node => {
-  return ts.createJsxFragment(ts.createJsxOpeningFragment(), [], ts.createJsxJsxClosingFragment());
+  return ts.factory.createJsxFragment(
+    ts.factory.createJsxOpeningFragment(), 
+    [], 
+    ts.factory.createJsxJsxClosingFragment()
+  );
 };
 ```
 
@@ -1543,19 +1547,11 @@ A work around is to ensure the opening/closing elements are passed into `ts.setO
 ```diff
 ts.createJsxFragment(
 -  ts.createJsxOpeningFragment(),
-+  ts.setOriginalNode(ts.createJsxOpeningFragment(), node),
++  ts.setOriginalNode(ts.factory.createJsxOpeningFragment(), node),
   [],
 -  ts.createJsxJsxClosingFragment()
-+  ts.setOriginalNode(ts.createJsxJsxClosingFragment(), node)
++  ts.setOriginalNode(ts.factory.createJsxJsxClosingFragment(), node)
 );
 ```
 
 See https://github.com/microsoft/TypeScript/issues/35686 for more information.
-
-## `getMutableClone(node)` blows up when used with `ts-loader`
-
-There seems to be a problem with `ts-loader` where it causes type checking to be triggered a second time when using `getMutableClone(node)` -
-this leads to undefined behavior in transformers and generally ends up having it blow up.
-Strong advice to steer clear of this method for now.
-
-See: {tbd raised issue here}
