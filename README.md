@@ -635,8 +635,8 @@ babel === plugins;
 ```
 
 Let's write a visitor function,
-remember that a visitor function should take a `node` of a particular kind (here a `SourceFile`),
-and then return a `node` of the same kind. Note that the `test` parameter of `visitNode` can be used
+remember that a visitor function should take a `node` of a particular type (here a `SourceFile`),
+and then return a `node` of the same type. Note that the `test` parameter of `visitNode` can be used
 to ensure that nodes of a particular type are returned.
 
 ```diff
