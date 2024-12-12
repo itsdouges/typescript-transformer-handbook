@@ -5,18 +5,19 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
     const visitor = (node: ts.Node): ts.Node => {
       if (ts.isFunctionDeclaration(node)) {
         // Will replace any function it finds with an arrow function.
-        return ts.createVariableDeclarationList(
+        return ts.factory.createVariableDeclarationList(
           [
-            ts.createVariableDeclaration(
-              ts.createIdentifier(node.name.escapedText as string),
-              undefined,
-              ts.createArrowFunction(
-                undefined,
-                undefined,
-                [],
-                undefined,
-                ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-                ts.createBlock([], false)
+            ts.factory.createVariableDeclaration(
+              ts.factory.createIdentifier(node.name!.escapedText as string),
+              undefined /* exclamation token */,
+              undefined /* type */,
+              ts.factory.createArrowFunction(
+                undefined /* modifiers */,
+                undefined /* typeParameters */,
+                [] /* parameters */,
+                undefined /* type */,
+                ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+                ts.factory.createBlock([], false)
               )
             ),
           ],
@@ -27,7 +28,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 

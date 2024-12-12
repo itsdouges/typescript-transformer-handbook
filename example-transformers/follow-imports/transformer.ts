@@ -6,14 +6,14 @@ const transformerProgram = (program: ts.Program) => {
       const visitor = (node: ts.Node): ts.Node => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
           const typeChecker = program.getTypeChecker();
-          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
+          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier)!;
           const exportSymbols = typeChecker.getExportsOfModule(importSymbol);
 
           exportSymbols.forEach(symbol =>
             console.log(
               `found "${
                 symbol.escapedName
-              }" export with value "${symbol.valueDeclaration.getText()}"`
+              }" export with value "${symbol.valueDeclaration!.getText()}"`
             )
           );
 
@@ -23,7 +23,7 @@ const transformerProgram = (program: ts.Program) => {
         return ts.visitEachChild(node, visitor, context);
       };
 
-      return ts.visitNode(sourceFile, visitor);
+      return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
     };
   };
 

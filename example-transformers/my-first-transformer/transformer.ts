@@ -6,17 +6,17 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       if (ts.isIdentifier(node)) {
         switch (node.escapedText) {
           case 'babel':
-            return ts.createIdentifier('typescript');
+            return ts.factory.createIdentifier('typescript');
 
           case 'plugins':
-            return ts.createIdentifier('transformers');
+            return ts.factory.createIdentifier('transformers');
         }
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 

@@ -153,7 +153,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 288, // (SyntaxKind.SourceFile)
+  kind: 307, // (SyntaxKind.SourceFile)
   pos: 0,
   end: 47,
   statements: [{...}],
@@ -162,7 +162,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 243, // (SyntaxKind.FunctionDeclaration)
+  kind: 262, // (SyntaxKind.FunctionDeclaration)
   pos: 0,
   end: 47,
   name: {...},
@@ -172,7 +172,7 @@ When looking at the metadata you'll notice they all have a similar structure (so
 
 ```js
 {
-  kind: 225, // (SyntaxKind.ExpressionStatement)
+  kind: 244, // (SyntaxKind.ExpressionStatement)
   pos: 19,
   end: 45,
   expression: {...}
@@ -288,33 +288,33 @@ If we take the previous example AST in JSON format (with some values omitted):
 
 ```js
 {
-  kind: 288, // (SyntaxKind.SourceFile)
+  kind: 307, // (SyntaxKind.SourceFile)
   statements: [{
-    kind: 243, // (SyntaxKind.FunctionDeclaration)
+    kind: 262, // (SyntaxKind.FunctionDeclaration)
     name: {
-      kind: 75 // (SyntaxKind.Identifier)
+      kind: 80 // (SyntaxKind.Identifier)
       escapedText: "hello"
     },
     body: {
-      kind: 222, // (SyntaxKind.Block)
+      kind: 241, // (SyntaxKind.Block)
       statements: [{
-        kind: 225, // (SyntaxKind.ExpressionStatement)
+        kind: 244, // (SyntaxKind.ExpressionStatement)
         expression: {
-          kind: 195, // (SyntaxKind.CallExpression)
+          kind: 213, // (SyntaxKind.CallExpression)
           expression: {
-            kind: 193, // (SyntaxKind.PropertyAccessExpression)
+            kind: 211, // (SyntaxKind.PropertyAccessExpression)
             name: {
-              kind: 75 // (SyntaxKind.Identifier)
+              kind: 80 // (SyntaxKind.Identifier)
               escapedText: "log",
             },
             expression: {
-              kind: 75, // (SyntaxKind.Identifier)
+              kind: 80, // (SyntaxKind.Identifier)
               escapedText: "console",
             }
           }
         },
         arguments: [{
-          kind: 10, // (SyntaxKind.StringLiteral)
+          kind: 11, // (SyntaxKind.StringLiteral)
           text: "world",
         }]
       }]
@@ -340,7 +340,7 @@ We'll go into what the `visitor` function is soon.
 ```ts
 import * as ts from 'typescript';
 
-ts.visitNode(sourceFile, visitor);
+ts.visitNode(sourceFile, visitor, test);
 ```
 
 ### `visitEachChild()`
@@ -371,7 +371,7 @@ const transformer = sourceFile => {
     return ts.visitEachChild(node, visitor, context);
   };
 
-  return ts.visitNode(sourceFile, visitor);
+  return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
 };
 ```
 
@@ -382,16 +382,16 @@ const transformer = sourceFile => {
 If we applied this to the code example used before we would see this logged in our console (comments added afterwords):
 
 ```sh
-288 	# ts.SyntaxKind.SourceFile
-243 	# ts.SyntaxKind.FunctionDeclaration
-75  	# ts.SyntaxKind.Identifier
-222 	# ts.SyntaxKind.Block
-225 	# ts.SyntaxKind.ExpressionStatement
-195 	# ts.SyntaxKind.CallExpression
-193 	# ts.SyntaxKind.PropertyAccessExpression
-75  	# ts.SyntaxKind.Identifier
-75  	# ts.SyntaxKind.Identifier
-10  	# ts.SyntaxKind.StringLiteral
+307 	# ts.SyntaxKind.SourceFile
+262 	# ts.SyntaxKind.FunctionDeclaration
+80  	# ts.SyntaxKind.Identifier
+241 	# ts.SyntaxKind.Block
+244 	# ts.SyntaxKind.ExpressionStatement
+213 	# ts.SyntaxKind.CallExpression
+211 	# ts.SyntaxKind.PropertyAccessExpression
+80  	# ts.SyntaxKind.Identifier
+80  	# ts.SyntaxKind.Identifier
+11  	# ts.SyntaxKind.StringLiteral
 ```
 
 > **Tip** - You can see the source for this at [/example-transformers/log-every-node](/example-transformers/log-every-node) - if wanting to run locally you can run it via `yarn build log-every-node`.
@@ -525,7 +525,7 @@ import * as ts from 'typescript';
 These methods are useful for visiting nodes -
 we've briefly gone over a few of them above.
 
-- `ts.visitNode(node, visitor)` - useful for visiting the root node, generally the `SourceFile`
+- `ts.visitNode(node, visitor, test)` - useful for visiting the root node, generally the `SourceFile`
 - `ts.visitEachChild(node, visitor, context)` - useful for visiting each child of a node
 - `ts.isXyz(node)` - useful for narrowing the type of a `node`, an example of this is `ts.isVariableDeclaration(node)`
 
@@ -533,12 +533,12 @@ we've briefly gone over a few of them above.
 
 These methods are useful for modifying a `node` in some form.
 
-- `ts.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.createIdentifier('world')`
+- `ts.factory.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.factory.createIdentifier('world')`
 
   > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source - instead of meticulously writing out an AST for a node you can write a code string and have it converted to AST for you.
 
-- `ts.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.updateVariableDeclaration()`
-- `ts.updateSourceFileNode(sourceFile, ...)` - useful for updating a source file to then return
+- `ts.factory.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.factory.updateVariableDeclaration()`
+- `ts.factory.updateSourceFile(sourceFile, ...)` - useful for updating a source file to then return
 - `ts.setOriginalNode(newNode, originalNode)` - useful for setting a nodes original node
 - `ts.setXyz(...)` - sets things
 - `ts.addXyz(...)` - adds things
@@ -635,8 +635,9 @@ babel === plugins;
 ```
 
 Let's write a visitor function,
-remember that a visitor function should take a `node`,
-and then return a `node`.
+remember that a visitor function should take a `node` of a particular type (here a `SourceFile`),
+and then return a `node` of the same type. Note that the `test` parameter of `visitNode` can be used
+to ensure that nodes of a particular type are returned.
 
 ```diff
 import * as ts from 'typescript';
@@ -647,7 +648,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return node;
 +    };
 +
-+    return ts.visitNode(sourceFile, visitor);
++    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
 -
 -    return sourceFile;
   };
@@ -671,7 +672,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
 +      return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -693,7 +694,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -721,7 +722,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -739,17 +740,17 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       if (ts.isIdentifier(node)) {
         switch (node.escapedText) {
           case 'babel':
-+            return ts.createIdentifier('typescript');
++            return ts.factory.createIdentifier('typescript');
 
           case 'plugins':
-+            return ts.createIdentifier('transformers');
++            return ts.factory.createIdentifier('transformers');
         }
       }
 
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 
@@ -805,7 +806,7 @@ Amusingly TypeScript has no official support for consuming transformers via `tsc
 There is a [GitHub issue](https://github.com/microsoft/TypeScript/issues/14419) dedicated to talking about introducing something for it.
 Regardless you can consume transformers it's just a little round-about.
 
-## [`ttypescript`](https://github.com/cevek/ttypescript)
+## [`ts-patch`](https://github.com/nonara/ts-patch)
 
 > **This is the recommended approach**!
 > Hopefully in the future this can be officially supported in `typescript`.
@@ -817,7 +818,7 @@ It has `typescript` listed as a peer dependency so the theory is it isn't too br
 Install:
 
 ```sh
-npm i ttypescript typescript -D
+npm i ts-patch -D
 ```
 
 Add your transformer into the compiler options:
@@ -830,45 +831,18 @@ Add your transformer into the compiler options:
 }
 ```
 
-Run `ttsc`:
+Run `tspc`:
 
 ```sh
-ttsc
+tspc
 ```
 
-`ttypescript` supports `tsc` CLI,
+`ts-patch` supports `tsc` CLI,
 Webpack,
-Parcel,
 Rollup,
 Jest,
 & VSCode.
 Everything we would want to use TBH.
-
-## `webpack`
-
-Using either [`awesome-typescript-loader`](https://github.com/s-panferov/awesome-typescript-loader#getcustomtransformers-string--program-tsprogram--tscustomtransformers--undefined-defaultundefined) or [`ts-loader`](https://github.com/TypeStrong/ts-loader#getcustomtransformers) you can either use the `getCustomTransformers()` option (they have the same signature) or you can use `ttypescript`:
-
-```js
-{
-  test: /\.(ts|tsx)$/,
-  loader: require.resolve('awesome-typescript-loader'),
-  // or
-  loader: require.resolve('ts-loader'),
-  options: {
-      compiler: 'ttypescript' // recommended, allows you to define transformers in tsconfig.json
-      // or
-      getCustomTransformers: program => {
-        before: [yourBeforeTransformer(program, { customConfig: true })],
-        after: [yourAfterTransformer(program, { customConfig: true })],
-      }
-  }
-}
-```
-
-## `parcel`
-
-Use `ttypescript` with the `parcel-plugin-ttypescript` plugin.
-See: https://github.com/cevek/ttypescript#parcel
 
 # Transformation operations
 
@@ -944,7 +918,7 @@ const transformerProgram = (program: ts.Program) => {
             console.log(
               `Found new symbol with name = "${
                 relatedSymbol.name
-              }". Added at positon = ${foundSymbols.length - 1}`
+              }". Added at position = ${foundSymbols.length - 1}`
             );
           }
 
@@ -954,7 +928,7 @@ const transformerProgram = (program: ts.Program) => {
         return ts.visitEachChild(node, visitor, context);
       };
 
-      return ts.visitNode(sourceFile, visitor);
+      return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
     };
   };
 
@@ -1030,7 +1004,13 @@ const visitor = (node: ts.Node): ts.Node => {
 
 ```ts
 if (ts.isVariableDeclaration(node)) {
-  return ts.updateVariableDeclaration(node, node.name, node.type, ts.createStringLiteral('world'));
+  return ts.updateVariableDeclaration(
+    node, 
+    node.name, 
+    undefined, 
+    node.type, 
+    ts.createStringLiteral('world')
+  );
 }
 ```
 
@@ -1041,27 +1021,6 @@ if (ts.isVariableDeclaration(node)) {
 
 > **Tip** - You can see the source for this at [/example-transformers/update-node](/example-transformers/update-node) - if wanting to run locally you can run it via `yarn build update-node`.
 
-Alternatively we can mutate the node via `getMutableClone(node)` **FYI there is a bug in `ts-loader` that makes this not work well,
-strong advise for now is to NOT use this**:
-
-```ts
-if (ts.isVariableDeclaration(node)) {
-  const newNode = ts.getMutableClone(node) as ts.VariableDeclaration;
-  newNode.initializer = ts.createStringLiteral('mutable-world');
-  return newNode;
-}
-```
-
-```diff
--const hello = true;
-+const hello = "mutable-world";
-```
-
-> **Tip** - You can see the source for this at [/example-transformers/update-mutable-node](/example-transformers/update-mutable-node) - if wanting to run locally you can run it via `yarn build update-mutable-node`.
-
-You'll notice that you can't mutate unless you `getMutableClone` -
-**this is by design**.
-
 ### Replacing a node
 
 Maybe instead of updating a node we want to completely change it.
@@ -1070,18 +1029,18 @@ We can do that by just returning... a completely new node!
 ```ts
 if (ts.isFunctionDeclaration(node)) {
   // Will replace any function it finds with an arrow function.
-  return ts.createVariableDeclarationList(
+  return ts.factory.createVariableDeclarationList(
     [
-      ts.createVariableDeclaration(
-        ts.createIdentifier(node.name.escapedText),
+      ts.factory.createVariableDeclaration(
+        ts.factory.createIdentifier(node.name.escapedText),
         undefined,
-        ts.createArrowFunction(
+        ts.factory.createArrowFunction(
           undefined,
           undefined,
           [],
           undefined,
-          ts.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
-          ts.createBlock([], false)
+          ts.factory.createToken(ts.SyntaxKind.EqualsGreaterThanToken),
+          ts.factory.createBlock([], false)
         )
       ),
     ],
@@ -1099,12 +1058,13 @@ if (ts.isFunctionDeclaration(node)) {
 
 ### Replacing a node with multiple nodes
 
-Interestingly, a visitor function can also return a array of nodes instead of just one node.
+Interestingly, a visitor function can also return an array of nodes instead of just one node.
 That means, even though it gets one node as input, it can return multiple nodes which replaces that input node.
 
 ```ts
-export type Visitor = (node: Node) => VisitResult<Node>;
-export type VisitResult<T extends Node> = T | T[] | undefined;
+type Visitor<TIn extends Node = Node, TOut extends Node | undefined = TIn | undefined> = 
+  (node: TIn) => VisitResult<TOut>;
+type VisitResult<T extends Node | undefined> = T | readonly Node[];
 ```
 
 Let's just replace every expression statement with two copies of the same statement (duplicating it) -
@@ -1123,7 +1083,7 @@ const transformer: ts.TransformerFactory<ts.SourceFile> = context => {
       return ts.visitEachChild(node, visitor, context);
     };
 
-    return ts.visitNode(sourceFile, visitor);
+    return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
   };
 };
 ```
@@ -1149,7 +1109,7 @@ The declaration statement (first line) is ignored as it's not a `ExpressionState
 
 _Note_ - Make sure that what you are trying to do actually makes sense in the AST. For ex., returning two expressions instead of one is often just invalid.
 
-Say there is a assignment expression (BinaryExpression with with EqualToken operator), `a = b = 2`. Now returning two nodes instead of `b = 2` expression is invalid (because right hand side can not be multiple nodes). So, TS will throw an error - `Debug Failure. False expression: Too many nodes written to output.`
+Say there is an assignment expression (BinaryExpression with with EqualToken operator), `a = b = 2`. Now returning two nodes instead of `b = 2` expression is invalid (because right hand side can not be multiple nodes). So, TS will throw an error - `Debug Failure. False expression: Too many nodes written to output.`
 
 ### Inserting a sibling node
 
@@ -1180,17 +1140,21 @@ Sometimes your transformation will need some runtime part,
 for that you can add your own import declaration.
 
 ```ts
-ts.updateSourceFileNode(sourceFile, [
-  ts.createImportDeclaration(
-    /* decorators */ undefined,
+ts.factory.updateSourceFile(sourceFile, [
+  ts.factory.createImportDeclaration(
     /* modifiers */ undefined,
-    ts.createImportClause(
-      ts.createIdentifier('DefaultImport'),
-      ts.createNamedImports([
-        ts.createImportSpecifier(undefined, ts.createIdentifier('namedImport')),
+    ts.factory.createImportClause(
+      false,
+      ts.factory.createIdentifier('DefaultImport'),
+      ts.factory.createNamedImports([
+        ts.factory.createImportSpecifier(
+          false, 
+          undefined, 
+          ts.factory.createIdentifier('namedImport')
+        ),
       ])
     ),
-    ts.createLiteral('package')
+    ts.factory.createStringLiteral('package')
   ),
   // Ensures the rest of the source files statements are still defined.
   ...sourceFile.statements,
@@ -1266,12 +1230,13 @@ luckily it's possible without needing to go through any hoops.
 
 ```ts
 if (ts.isVariableDeclarationList(node)) {
-  return ts.updateVariableDeclarationList(node, [
+  return ts.factory.updateVariableDeclarationList(node, [
     ...node.declarations,
-    ts.createVariableDeclaration(
-      ts.createUniqueName('hello'),
-      undefined,
-      ts.createStringLiteral('world')
+    ts.factory.createVariableDeclaration(
+      ts.factory.createUniqueName('hello'),
+      undefined /* exclamation token */,
+      undefined /* type */,
+      ts.factory.createStringLiteral('world')
     ),
   ]);
 }
@@ -1316,14 +1281,14 @@ const transformerProgram = (program: ts.Program) => {
       const visitor = (node: ts.Node): ts.Node => {
         if (ts.isImportDeclaration(node) && ts.isStringLiteral(node.moduleSpecifier)) {
           const typeChecker = program.getTypeChecker();
-          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier);
+          const importSymbol = typeChecker.getSymbolAtLocation(node.moduleSpecifier)!;
           const exportSymbols = typeChecker.getExportsOfModule(importSymbol);
 
           exportSymbols.forEach(symbol =>
             console.log(
               `found "${
                 symbol.escapedName
-              }" export with value "${symbol.valueDeclaration.getText()}"`
+              }" export with value "${symbol.valueDeclaration!.getText()}"`
             )
           );
 
@@ -1333,7 +1298,7 @@ const transformerProgram = (program: ts.Program) => {
         return ts.visitEachChild(node, visitor, context);
       };
 
-      return ts.visitNode(sourceFile, visitor);
+      return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
     };
   };
 
@@ -1398,7 +1363,7 @@ const visitor = (node: ts.Node): ts.Node => {
       allowJs: true,
     });
 
-    console.log(innerProgram.getSourceFile(pkgEntry).getText());
+    console.log(innerProgram.getSourceFile(pkgEntry)?.getText());
 
     return node;
   }
@@ -1434,8 +1399,8 @@ there are a handful of helper methods to get started.
 All previous methods of visiting and manipulation apply.
 
 - `ts.isJsxXyz(node)`
-- `ts.updateJsxXyz(node, ...)`
-- `ts.createJsxXyz(...)`
+- `ts.factory.updateJsxXyz(node, ...)`
+- `ts.factory.createJsxXyz(...)`
 
 Interrogate the typescript import for more details.
 The primary point is you need to create valid JSX -
@@ -1448,7 +1413,7 @@ Say for example we wanted to know if a custom `jsx` pragma is being used:
 
 ```ts
 const transformer = sourceFile => {
-  const jsxPragma = sourceFile.pragmas.get('jsx');
+  const jsxPragma = (sourceFile as any).pragmas.get('jsx'); // see below regarding the cast to `any`
   if (jsxPragma) {
     console.log(`a jsx pragma was found using the factory "${jsxPragma.arguments.factory}"`);
   }
@@ -1568,7 +1533,11 @@ If you replace a node with a new jsx element like this:
 
 ```tsx
 const visitor = node => {
-  return ts.createJsxFragment(ts.createJsxOpeningFragment(), [], ts.createJsxJsxClosingFragment());
+  return ts.factory.createJsxFragment(
+    ts.factory.createJsxOpeningFragment(), 
+    [], 
+    ts.factory.createJsxJsxClosingFragment()
+  );
 };
 ```
 
@@ -1578,19 +1547,11 @@ A work around is to ensure the opening/closing elements are passed into `ts.setO
 ```diff
 ts.createJsxFragment(
 -  ts.createJsxOpeningFragment(),
-+  ts.setOriginalNode(ts.createJsxOpeningFragment(), node),
++  ts.setOriginalNode(ts.factory.createJsxOpeningFragment(), node),
   [],
 -  ts.createJsxJsxClosingFragment()
-+  ts.setOriginalNode(ts.createJsxJsxClosingFragment(), node)
++  ts.setOriginalNode(ts.factory.createJsxJsxClosingFragment(), node)
 );
 ```
 
 See https://github.com/microsoft/TypeScript/issues/35686 for more information.
-
-## `getMutableClone(node)` blows up when used with `ts-loader`
-
-There seems to be a problem with `ts-loader` where it causes type checking to be triggered a second time when using `getMutableClone(node)` -
-this leads to undefined behavior in transformers and generally ends up having it blow up.
-Strong advice to steer clear of this method for now.
-
-See: {tbd raised issue here}

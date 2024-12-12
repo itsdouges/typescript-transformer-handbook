@@ -14,7 +14,7 @@ const transformerProgram = () => {
             allowJs: true,
           });
 
-          console.log(innerProgram.getSourceFile(pkgEntry).getText());
+          console.log(innerProgram.getSourceFile(pkgEntry)?.getText());
 
           return node;
         }
@@ -22,7 +22,7 @@ const transformerProgram = () => {
         return ts.visitEachChild(node, visitor, context);
       };
 
-      return ts.visitNode(sourceFile, visitor);
+      return ts.visitNode(sourceFile, visitor, ts.isSourceFile);
     };
   };
 
