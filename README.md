@@ -534,9 +534,6 @@ we've briefly gone over a few of them above.
 These methods are useful for modifying a `node` in some form.
 
 - `ts.factory.createXyz(...)` - useful for creating a new node (to then return), an example of this is `ts.factory.createIdentifier('world')`
-
-  > **Tip** - Use [ts-creator](https://github.com/HearTao/ts-creator) to quickly get factory functions for a piece of TypeScript source - instead of meticulously writing out an AST for a node you can write a code string and have it converted to AST for you.
-
 - `ts.factory.updateXyz(node, ...)` - useful for updating a node (to then return), an example of this is `ts.factory.updateVariableDeclaration()`
 - `ts.factory.updateSourceFile(sourceFile, ...)` - useful for updating a source file to then return
 - `ts.setOriginalNode(newNode, originalNode)` - useful for setting a nodes original node
